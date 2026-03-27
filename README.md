@@ -2,6 +2,8 @@
 
 Real-time pixel-art dashboard for multi-agent systems. Production observability meets engaging visualization.
 
+![Dashboard Overview](tests/visual/screenshots/01_dashboard_idle.png)
+
 ```
 pip install pixelpulse
 ```
@@ -128,6 +130,24 @@ pp.agent_message("agent-a", "agent-b", content="Here's the data")
 pp.agent_completed("my-agent", output="Done!")
 ```
 
+## Screenshots
+
+### Agents at Work
+![Agents Active](tests/visual/screenshots/02_demo_agents_active.png)
+*Pixel art agents roaming their team rooms, orchestrator pipeline bar showing stage progression*
+
+### Live Event Tracking
+![Message Flow](tests/visual/screenshots/19_manual_message_flow.png)
+*Speech bubbles, agent-to-agent message particles, cost tracking, and rich event log*
+
+### Focus Mode + Minimap
+![Focus Mode](tests/visual/screenshots/05_focus_mode_room1.png)
+*Double-click a room to zoom in. Minimap shows viewport position. ESC to return.*
+
+### Flow Connectors
+![Flow Connectors](tests/visual/screenshots/04_flow_connectors.png)
+*Dashed pipeline flow lines between rooms show data flow direction (F key toggle)*
+
 ## Dynamic Canvas
 
 The dashboard automatically adapts to any number of teams and agents:
@@ -151,6 +171,9 @@ The dashboard automatically adapts to any number of teams and agents:
 - Rich event log with filtering
 - Dark and light themes
 - Settings panel with room sizing and orchestrator controls
+
+### Keyboard Shortcuts
+![Keyboard Help](tests/visual/screenshots/07_keyboard_help.png)
 
 ## Test Coverage
 
