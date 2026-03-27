@@ -70,10 +70,10 @@ def main(argv: list[str] | None = None) -> None:
             theme=getattr(args, "theme", "dark"),
             port=args.port,
         )
-        print(f"\n  PixelPulse v0.1.0 (serve mode)")
+        print("\n  PixelPulse v0.1.0 (serve mode)")
         print(f"  Dashboard: http://localhost:{args.port}")
         print(f"  Hook endpoint: http://localhost:{args.port}/hooks/claude-code")
-        print(f"  Waiting for events...\n")
+        print("  Waiting for events...\n")
         pp.serve(port=args.port, open_browser=not args.no_browser)
 
     else:  # demo

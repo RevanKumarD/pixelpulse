@@ -1,18 +1,14 @@
 """Tests for the Claude Code hook handler script."""
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
-
-import pytest
 
 # Add the scripts directory to path so we can import the handler module
 SCRIPTS_DIR = Path(__file__).resolve().parents[2] / "plugins" / "claude-code" / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-from tests.plugin.conftest import make_hook_payload
+from tests.plugin.conftest import make_hook_payload  # noqa: E402
 
 
 class TestParseHookEvent:

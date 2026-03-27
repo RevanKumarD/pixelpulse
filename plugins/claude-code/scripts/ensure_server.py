@@ -11,7 +11,6 @@ Called by hook_handler.py on SessionStart events.
 from __future__ import annotations
 
 import argparse
-import os
 import platform
 import shutil
 import subprocess

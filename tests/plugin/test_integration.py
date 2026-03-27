@@ -6,7 +6,6 @@ through the PixelPulse server to the event API.
 from __future__ import annotations
 
 import asyncio
-import json
 import sys
 from pathlib import Path
 
@@ -97,7 +96,11 @@ class TestFullHookFlow:
             # one agent/session event and at least one thinking/artifact event.
             assert len(events) >= 2
             # Agent/session events (any of the known types from the hook path)
-            assert types & {"agent_started", "run_started", "agent_status", "agent_thinking", "artifact_event"}
+            known = {
+                "agent_started", "run_started", "agent_status",
+                "agent_thinking", "artifact_event",
+            }
+            assert types & known
 
     @pytest.mark.asyncio
     async def test_mcp_aggregation_matches_server_events(self, pp):
