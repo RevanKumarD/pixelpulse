@@ -35,28 +35,111 @@ pp.cost_update("researcher", cost=0.003, tokens_in=1200, tokens_out=400)
 
 ## Framework Adapters
 
+### Zero-Config Auto-Detection
+
+```python
+pp = PixelPulse(agents={...})
+results = pp.auto_instrument()
+# {"crewai": True, "langgraph": False, "openai": False, "autogen": False}
+pp.serve()
+```
+
+### LangGraph
+
+```python
+pp = PixelPulse(agents={...})
+adapter = pp.adapter("langgraph")
+adapter.instrument(compiled_graph)  # Patches invoke/ainvoke
+result = graph.invoke({"input": "Hello"})
+```
+
+### OpenAI Agents SDK
+
+```python
+pp = PixelPulse(agents={...})
+adapter = pp.adapter("openai")
+adapter.instrument()  # Registers global TracingProcessor
+result = Runner.run_sync(agent, "Hello!")
+```
+
 ### CrewAI
 
 ```python
-from pixelpulse import PixelPulse
-
 pp = PixelPulse(agents={...})
 adapter = pp.adapter("crewai")
 adapter.instrument(my_crew)
+```
+
+### AutoGen
+
+```python
+pp = PixelPulse(agents={...})
+adapter = pp.adapter("autogen")
+adapter.instrument(runtime)
+```
+
+### Claude Code
+
+```python
+pp = PixelPulse(agents={...})
+adapter = pp.adapter("claude_code")
+adapter.instrument()  # Enables /hooks/claude-code HTTP endpoint
+# Configure Claude Code hooks to POST to http://localhost:8765/hooks/claude-code
+```
+
+### @observe() Decorator
+
+Langfuse-inspired function-level instrumentation:
+
+```python
+from pixelpulse import PixelPulse
+from pixelpulse.decorators import observe
+
+pp = PixelPulse(agents={...})
+
+@observe(pp, as_type="agent", name="researcher")
+def research(query):
+    # Automatically emits agent_started, agent_completed, agent_error
+    return do_research(query)
+
+@observe(pp, as_type="tool", name="web-search")
+def search(q):
+    # Emits agent_thinking + artifact_created
+    return fetch_results(q)
+```
+
+### OpenTelemetry (OTEL)
+
+Ingest spans from any OTEL-instrumented framework:
+
+```python
+pp = PixelPulse(agents={...})
 pp.serve()
+# POST GenAI spans to http://localhost:8765/v1/traces
 ```
 
 ### Generic (any Python agent system)
 
 ```python
 pp = PixelPulse(agents={...})
-
-# In your agent code, emit events directly:
 pp.agent_started("my-agent", task="Working on it")
 pp.agent_thinking("my-agent", thought="Considering options A, B, C...")
 pp.agent_message("agent-a", "agent-b", content="Here's the data")
 pp.agent_completed("my-agent", output="Done!")
 ```
+
+## Dynamic Canvas
+
+The dashboard automatically adapts to any number of teams and agents:
+
+- **Auto-grid layout**: `cols = ceil(sqrt(teamCount))` — works from 1 to 20+ teams
+- **Room sizing modes**: Uniform, Adaptive (size by agent count), Compact (fixed 9-tile)
+- **Focus mode**: Double-click a room to zoom in, ESC to return
+- **Collapsible rooms**: Click team label to collapse to a compact badge
+- **Minimap**: 160x100px viewport overview with click-to-pan (appears at 5+ teams)
+- **Compact overflow**: Rooms with 6+ agents show overflow as head icons with +N badge
+- **Dynamic team colors**: Deterministic color generation for arbitrary team IDs
+- **Keyboard shortcuts**: F (flow connectors), M (minimap), T (team filter), H (help)
 
 ## What You Get
 
@@ -65,15 +148,25 @@ pp.agent_completed("my-agent", output="Done!")
 - Speech bubbles showing agent reasoning
 - Pipeline stage progression
 - Cost and token tracking per agent
-- Rich event log
+- Rich event log with filtering
 - Dark and light themes
-- Keyboard shortcuts
+- Settings panel with room sizing and orchestrator controls
+
+## Test Coverage
+
+273 tests covering:
+- Adapter unit tests (LangGraph, OpenAI Agents, CrewAI, AutoGen, Claude Code, OTEL)
+- E2E pipeline tests (real LangGraph StateGraph, OpenAI tracing protocol)
+- @observe() decorator (sync, async, nested context, error handling)
+- auto_instrument() detection
+- Event protocol, lifecycle, server endpoints
+- Dynamic canvas rendering
 
 ## Why PixelPulse?
 
 Production observability tools (AgentOps, Langfuse, Arize Phoenix) have great tracing but boring dashboards.
 
-Pixel-art visualization tools (Pixel Agents) are fun but have zero production utility.
+Pixel-art visualization tools are fun but have zero production utility.
 
 PixelPulse combines both: **engaging visualization + real observability**.
 
