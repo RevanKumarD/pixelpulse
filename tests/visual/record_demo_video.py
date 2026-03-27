@@ -138,11 +138,12 @@ def _webm_to_gif(webm: Path, gif: Path) -> None:
         palette = Path(tmp) / "palette.png"
 
         # Pass 1: generate optimal palette (much sharper than direct conversion)
+        # fps=8, scale=900 keeps file under GitHub's 10 MB inline-display limit
         log.info("Generating palette...")
         subprocess.run([
             "ffmpeg", "-y",
             "-i", str(webm),
-            "-vf", "fps=10,scale=1000:-1:flags=lanczos,palettegen=max_colors=128",
+            "-vf", "fps=8,scale=900:-1:flags=lanczos,palettegen=max_colors=96",
             str(palette),
         ], check=True, capture_output=True)
 
@@ -152,14 +153,14 @@ def _webm_to_gif(webm: Path, gif: Path) -> None:
             "ffmpeg", "-y",
             "-i", str(webm),
             "-i", str(palette),
-            "-filter_complex", "fps=10,scale=1000:-1:flags=lanczos[x];[x][1:v]paletteuse=dither=bayer",
+            "-filter_complex", "fps=8,scale=900:-1:flags=lanczos[x];[x][1:v]paletteuse=dither=bayer",
             str(gif),
         ], check=True, capture_output=True)
 
     size_mb = gif.stat().st_size / 1_048_576
     log.info("GIF saved to %s (%.1f MB)", gif, size_mb)
-    if size_mb > 15:
-        log.warning("GIF is %.1f MB — consider reducing fps or scale for GitHub display", size_mb)
+    if size_mb > 10:
+        log.warning("GIF is %.1f MB — over GitHub's 10 MB inline limit, reduce fps or scale", size_mb)
 
 
 async def main() -> None:
