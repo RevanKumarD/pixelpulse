@@ -3,7 +3,7 @@
 The server provides:
 - Static file serving for the dashboard frontend
 - WebSocket endpoint for real-time event streaming
-- REST API for configuration and event history
+- REST API for configuration, event history, and run management
 """
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -34,16 +34,38 @@ def create_app(
     teams: dict[str, TeamConfig],
     pipeline_stages: list[str] | None = None,
     title: str = "PixelPulse",
+    db_path: str | Path | None = None,
 ) -> FastAPI:
     """Create the FastAPI application with dashboard and WebSocket support."""
 
     # ---- State ----
     bus = get_event_bus()
+    _storage = {"db": None, "subscriber": None, "runs": None, "events": None}
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         set_main_loop()
+        # Initialize storage if db_path is provided
+        if db_path is not None:
+            from pixelpulse.storage.db import Database
+            from pixelpulse.storage.event_repo import EventRepository
+            from pixelpulse.storage.run_repo import RunRepository
+            from pixelpulse.storage.subscriber import StorageSubscriber
+
+            db = Database(db_path)
+            await db.connect()
+            _storage["db"] = db
+            _storage["runs"] = RunRepository(db)
+            _storage["events"] = EventRepository(db)
+            _storage["subscriber"] = StorageSubscriber(db)
+            await _storage["subscriber"].attach(bus)
+            logger.info("PixelPulse storage enabled: %s", db_path)
         yield
+        # Cleanup storage
+        if _storage["subscriber"] is not None:
+            await _storage["subscriber"].detach(bus)
+        if _storage["db"] is not None:
+            await _storage["db"].close()
 
     app = FastAPI(title=title, docs_url=None, redoc_url=None, lifespan=lifespan)
 
@@ -247,6 +269,187 @@ def create_app(
 
         response = _claude_code_adapter.on_hook_event(event)
         return JSONResponse(response)
+
+    # ---- Run History API ----
+
+    @app.get("/api/runs")
+    async def list_runs(
+        limit: int = Query(50, ge=1, le=200),
+        offset: int = Query(0, ge=0),
+        status: str | None = Query(None),
+    ) -> JSONResponse:
+        """List saved runs, newest first."""
+        if _storage["runs"] is None:
+            return JSONResponse({"runs": [], "total": 0, "storage_enabled": False})
+        runs = await _storage["runs"].list_all(limit=limit, offset=offset, status=status)
+        total = await _storage["runs"].count(status=status)
+        return JSONResponse({
+            "runs": [r.to_dict() for r in runs],
+            "total": total,
+            "storage_enabled": True,
+        })
+
+    @app.get("/api/runs/{run_id}")
+    async def get_run(run_id: str) -> JSONResponse:
+        """Get a run by ID with summary stats."""
+        if _storage["runs"] is None:
+            return JSONResponse({"error": "Storage not enabled"}, status_code=503)
+        run = await _storage["runs"].get(run_id)
+        if run is None:
+            return JSONResponse({"error": "Run not found"}, status_code=404)
+        cost_summary = await _storage["events"].get_cost_summary(run_id)
+        agent_ids = await _storage["events"].get_agent_ids_for_run(run_id)
+        return JSONResponse({
+            "run": run.to_dict(),
+            "cost_summary": cost_summary,
+            "agent_ids": agent_ids,
+        })
+
+    @app.get("/api/runs/{run_id}/events")
+    async def get_run_events(
+        run_id: str,
+        event_type: str | None = Query(None),
+        agent_id: str | None = Query(None),
+        limit: int = Query(1000, ge=1, le=10000),
+        offset: int = Query(0, ge=0),
+    ) -> JSONResponse:
+        """Get events for a run (for replay or inspection)."""
+        if _storage["events"] is None:
+            return JSONResponse({"error": "Storage not enabled"}, status_code=503)
+        events = await _storage["events"].list_by_run(
+            run_id, event_type=event_type, agent_id=agent_id,
+            limit=limit, offset=offset,
+        )
+        return JSONResponse({
+            "events": [e.to_dict() for e in events],
+            "count": len(events),
+        })
+
+    @app.delete("/api/runs/{run_id}")
+    async def delete_run(run_id: str) -> JSONResponse:
+        """Delete a run and all its events."""
+        if _storage["runs"] is None:
+            return JSONResponse({"error": "Storage not enabled"}, status_code=503)
+        deleted = await _storage["runs"].delete(run_id)
+        if not deleted:
+            return JSONResponse({"error": "Run not found"}, status_code=404)
+        return JSONResponse({"deleted": True})
+
+    @app.get("/api/runs/{run_id}/export")
+    async def export_run(run_id: str) -> JSONResponse:
+        """Export a run with all events as JSON."""
+        if _storage["runs"] is None:
+            return JSONResponse({"error": "Storage not enabled"}, status_code=503)
+        export = await _storage["runs"].export_run(run_id)
+        if export is None:
+            return JSONResponse({"error": "Run not found"}, status_code=404)
+        return JSONResponse(export)
+
+    @app.post("/api/runs/import")
+    async def import_run(body: dict) -> JSONResponse:
+        """Import a run from exported JSON."""
+        if _storage["runs"] is None or _storage["events"] is None:
+            return JSONResponse({"error": "Storage not enabled"}, status_code=503)
+
+        from pixelpulse.storage.models import EventRecord, RunRecord
+
+        run_data = body.get("run")
+        events_data = body.get("events", [])
+        if not run_data or "id" not in run_data:
+            return JSONResponse({"error": "Invalid import format"}, status_code=400)
+
+        # Check if run already exists
+        existing = await _storage["runs"].get(run_data["id"])
+        if existing is not None:
+            return JSONResponse({"error": "Run already exists"}, status_code=409)
+
+        run = RunRecord(
+            id=run_data["id"],
+            name=run_data.get("name", ""),
+            status=run_data.get("status", "completed"),
+            started_at=run_data.get("started_at", ""),
+            completed_at=run_data.get("completed_at", ""),
+            total_cost=run_data.get("total_cost", 0),
+            total_tokens_in=run_data.get("total_tokens_in", 0),
+            total_tokens_out=run_data.get("total_tokens_out", 0),
+            agent_count=run_data.get("agent_count", 0),
+            event_count=run_data.get("event_count", 0),
+            metadata=run_data.get("metadata", {}),
+        )
+        await _storage["runs"].create(run)
+
+        for evt_data in events_data:
+            event = EventRecord(
+                id=evt_data["id"],
+                run_id=evt_data["run_id"],
+                type=evt_data["type"],
+                timestamp=evt_data["timestamp"],
+                source_framework=evt_data.get("source_framework", ""),
+                payload=evt_data.get("payload", {}),
+                agent_id=evt_data.get("agent_id", ""),
+            )
+            await _storage["events"].create(event)
+
+        return JSONResponse({"imported": True, "run_id": run.id, "event_count": len(events_data)})
+
+    # ---- Agent Detail API ----
+
+    @app.get("/api/agents/{agent_id}/events")
+    async def get_agent_events(
+        agent_id: str,
+        run_id: str | None = Query(None),
+        limit: int = Query(200, ge=1, le=1000),
+        offset: int = Query(0, ge=0),
+    ) -> JSONResponse:
+        """Get events for a specific agent."""
+        if _storage["events"] is None:
+            return JSONResponse({"error": "Storage not enabled"}, status_code=503)
+        events = await _storage["events"].list_by_agent(
+            agent_id, run_id=run_id, limit=limit, offset=offset,
+        )
+        return JSONResponse({
+            "events": [e.to_dict() for e in events],
+            "count": len(events),
+        })
+
+    @app.get("/api/agents/{agent_id}/stats")
+    async def get_agent_stats(agent_id: str, run_id: str | None = Query(None)) -> JSONResponse:
+        """Get computed stats for an agent."""
+        if _storage["events"] is None:
+            return JSONResponse({"error": "Storage not enabled"}, status_code=503)
+        events = await _storage["events"].list_by_agent(agent_id, run_id=run_id)
+
+        task_count = sum(1 for e in events if e.type == "agent_status"
+                         and e.payload.get("status") == "active")
+        error_count = sum(1 for e in events if e.type == "error")
+        total_cost = sum(e.payload.get("cost", 0) for e in events if e.type == "cost_update")
+        total_tokens_in = sum(
+            e.payload.get("tokens_in", 0) for e in events if e.type == "cost_update"
+        )
+        total_tokens_out = sum(
+            e.payload.get("tokens_out", 0) for e in events if e.type == "cost_update"
+        )
+        messages_sent = sum(1 for e in events if e.type == "message_flow")
+
+        # Find communication partners
+        partners: dict[str, int] = {}
+        for e in events:
+            if e.type == "message_flow":
+                to_agent = e.payload.get("to", "")
+                if to_agent:
+                    partners[to_agent] = partners.get(to_agent, 0) + 1
+
+        return JSONResponse({
+            "agent_id": agent_id,
+            "task_count": task_count,
+            "error_count": error_count,
+            "total_cost": total_cost,
+            "total_tokens_in": total_tokens_in,
+            "total_tokens_out": total_tokens_out,
+            "messages_sent": messages_sent,
+            "communication_partners": partners,
+            "event_count": len(events),
+        })
 
     # ---- WebSocket ----
 

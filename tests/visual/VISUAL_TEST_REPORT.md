@@ -1,282 +1,139 @@
-# PixelPulse Visual Test Report
+# PixelPulse Visual E2E Test Report
 
-> Generated: 2026-03-27 16:24:06
-> Tests: 12 scenarios, 43 screenshots
-> Model: gpt-4o-mini (cheapest available)
+> Generated: 2026-03-28 00:36:56
+> Screenshots: 26
+> Tests: 17 (16 passed, 1 failed)
 
-## Test Results
+## Results Summary
 
-| # | Test | Status |
-|---|------|--------|
-| 1 | Demo Mode + Dynamic Canvas | PASS |
-| 2 | LangGraph Adapter (simulated events) | PASS |
-| 3 | @observe Decorator (simulated events) | PASS |
-| 4 | OTEL Ingestion | PASS |
-| 5 | Manual Events (Generic Adapter) | PASS |
-| 6 | Focus Mode — evenodd clip fix verified | PASS |
-| 7 | Stress: 1 Room, 1 Agent | PASS |
-| 8 | Stress: 10 Agents Overflow | PASS |
-| 9 | Stress: 6 Rooms Fit View | PASS |
-| 10 | Real OpenAI API — gpt-4o-mini via LangGraph | PASS |
-| 11 | Settings Modes — uniform / adaptive / compact | PASS |
-| 12 | Dark / Light Theme Toggle | PASS |
+| # | Test | Status | Notes |
+|---|------|--------|-------|
+| 1 | Idle Dashboard | PASS | Canvas 1120x636 |
+| 2 | Demo Active State | PASS | 1 events in log after 5s |
+| 3 | Message Flow | PASS | 4 comms entries |
+| 4 | Agent Detail Panel | PASS | All 4 tabs captured |
+| 5 | Canvas Agent Click | FAIL | Could not open panel from canvas click (agents may be roaming) |
+| 6 | Sidebar Toggle | PASS | Collapsed and expanded |
+| 7 | Theme Switch | PASS | Light/dark toggle captured |
+| 8 | Keyboard Help | PASS | Shortcut overlay captured |
+| 9 | View Controls | PASS | Zoom/fit/reset captured |
+| 10 | Demo Stop | PASS | Demo stopped, final state captured |
+| 11 | Event Log Content | PASS | 9 entries |
+| 12 | Run History Section | PASS | Content: Storage not enabled |
+| 13 | Replay Controls | PASS | Hidden by default |
+| 14 | API Event Pipeline | PASS | Full pipeline simulation with thinking/messages/costs |
+| 15 | Error State | PASS | Error event emitted and captured |
+| 16 | Bottom Bar Toggle | PASS | Collapsed and expanded |
+| 17 | Final Dashboard State | PASS | Complete dashboard with all events visible |
+
+## Console Errors
+
+- `[error] Failed to load resource: the server responded with a status of 404 (Not Found)`
 
 ---
 
-### 01 Dashboard Idle
+## Screenshots
 
-**Dashboard Idle State**: Initial dashboard render with all teams visible, agents idle.
+### Dashboard Idle
 
-![Dashboard Idle State](screenshots/01_dashboard_idle.png)
+![Dashboard Idle](screenshots/01_dashboard_idle.png)
 
-### 02 Demo Agents Active
+### Demo Active 5S
 
-**Demo Mode — Agents Active**: Demo mode started. Agents show running animations, speech bubbles display thinking.
+![Demo Active 5S](screenshots/02_demo_active_5s.png)
 
-![Demo Mode — Agents Active](screenshots/02_demo_agents_active.png)
+### Demo Active 13S
 
-### 03 Demo Messages Flowing
+![Demo Active 13S](screenshots/03_demo_active_13s.png)
 
-**Demo Mode — Messages Flowing**: Inter-agent message particles visible between rooms.
+### Message Flow
 
-![Demo Mode — Messages Flowing](screenshots/03_demo_messages_flowing.png)
+![Message Flow](screenshots/04_message_flow.png)
 
-### 04 Flow Connectors
+### Agent Detail Overview
 
-**Flow Connectors**: Dashed pipeline flow lines between rooms (F key toggle).
+![Agent Detail Overview](screenshots/05_agent_detail_overview.png)
 
-![Flow Connectors](screenshots/04_flow_connectors.png)
+### Agent Detail Messages
 
-### 05 Focus Mode Room1
+![Agent Detail Messages](screenshots/06_agent_detail_messages.png)
 
-**Focus Mode — Room 1**: Double-click zoom into Research Lab. Other rooms dimmed.
+### Agent Detail Reasoning
 
-![Focus Mode — Room 1](screenshots/05_focus_mode_room1.png)
+![Agent Detail Reasoning](screenshots/07_agent_detail_reasoning.png)
 
-### 06 Focus Mode Room2
+### Agent Detail Performance
 
-**Focus Mode — Room 2**: Focus on Design Studio via keyboard shortcut (2 key).
+![Agent Detail Performance](screenshots/08_agent_detail_performance.png)
 
-![Focus Mode — Room 2](screenshots/06_focus_mode_room2.png)
+### Sidebar Collapsed
 
-### 07 Keyboard Help
+![Sidebar Collapsed](screenshots/10_sidebar_collapsed.png)
 
-**Keyboard Help**: Help dialog showing all keyboard shortcuts (? key).
+### Sidebar Expanded
 
-![Keyboard Help](screenshots/07_keyboard_help.png)
+![Sidebar Expanded](screenshots/11_sidebar_expanded.png)
 
-### 08 Demo Pipeline Progress
+### Settings Panel
 
-**Pipeline Progress**: Demo showing pipeline stage progression with cost accumulation.
+![Settings Panel](screenshots/12_settings_panel.png)
 
-![Pipeline Progress](screenshots/08_demo_pipeline_progress.png)
+### Light Theme
 
-### 10 Langgraph Before
+![Light Theme](screenshots/13_light_theme.png)
 
-**LangGraph — Before**: Dashboard ready before LangGraph pipeline starts.
+### Keyboard Help
 
-![LangGraph — Before](screenshots/10_langgraph_before.png)
+![Keyboard Help](screenshots/14_keyboard_help.png)
 
-### 11 Langgraph Running
+### Zoomed In
 
-**LangGraph — Running**: Real gpt-4o-mini call in progress via LangGraph adapter.
+![Zoomed In](screenshots/15_zoomed_in.png)
 
-![LangGraph — Running](screenshots/11_langgraph_running.png)
+### Fit View
 
-### 12 Langgraph Midway
+![Fit View](screenshots/16_fit_view.png)
 
-**LangGraph — Midway**: Multiple agents processed, messages flowing between nodes.
+### Demo Stopped
 
-![LangGraph — Midway](screenshots/12_langgraph_midway.png)
+![Demo Stopped](screenshots/17_demo_stopped.png)
 
-### 13 Langgraph Complete
+### Run History Section
 
-**LangGraph — Complete**: LangGraph pipeline completed. All events captured.
+![Run History Section](screenshots/18_run_history_section.png)
 
-![LangGraph — Complete](screenshots/13_langgraph_complete.png)
+### Api Agent Thinking
 
-### 14 Observe Running
+![Api Agent Thinking](screenshots/19_api_agent_thinking.png)
 
-**@observe — Running**: Decorated functions executing with real OpenAI calls.
+### Api Message Particle
 
-![@observe — Running](screenshots/14_observe_running.png)
+![Api Message Particle](screenshots/20_api_message_particle.png)
 
-### 15 Observe Midway
+### Api Multi Agent Active
 
-**@observe — Midway**: Nested tool call (web-search) visible as agent thinking.
+![Api Multi Agent Active](screenshots/21_api_multi_agent_active.png)
 
-![@observe — Midway](screenshots/15_observe_midway.png)
+### Api Design Phase
 
-### 16 Observe Complete
+![Api Design Phase](screenshots/22_api_design_phase.png)
 
-**@observe — Complete**: Full @observe pipeline completed with cost tracking.
+### Api Agents Completing
 
-![@observe — Complete](screenshots/16_observe_complete.png)
+![Api Agents Completing](screenshots/23_api_agents_completing.png)
 
-### 17 Otel Ingestion
+### Error State
 
-**OTEL Ingestion**: Events received from synthetic OTEL spans via /v1/traces.
+![Error State](screenshots/24_error_state.png)
 
-![OTEL Ingestion](screenshots/17_otel_ingestion.png)
+### Bottom Collapsed
 
-### 18 Manual Researcher Active
+![Bottom Collapsed](screenshots/25_bottom_collapsed.png)
 
-**Manual — Researcher Active**: Manual event emission: researcher agent scanning signals.
+### Bottom Expanded
 
-![Manual — Researcher Active](screenshots/18_manual_researcher_active.png)
+![Bottom Expanded](screenshots/26_bottom_expanded.png)
 
-### 19 Manual Message Flow
+### Final Dashboard State
 
-**Manual — Message Flow**: Agent-to-agent message: researcher passing data to writer.
-
-![Manual — Message Flow](screenshots/19_manual_message_flow.png)
-
-### 20 Manual Writer Active
-
-**Manual — Writer Active**: Writer agent processing brief with thinking bubbles.
-
-![Manual — Writer Active](screenshots/20_manual_writer_active.png)
-
-### 21 Manual Complete
-
-**Manual — Complete**: Full manual event pipeline complete with cost summary.
-
-![Manual — Complete](screenshots/21_manual_complete.png)
-
-### 22 Focus Overview
-
-**Focus — Overview Before**: Dashboard overview before entering focus mode.
-
-![Focus — Overview Before](screenshots/22_focus_overview.png)
-
-### 23 Focus Room1 Content
-
-**Focus — Room 1 Content**: Focus mode: Room 1 content visible (not blank). evenodd clip fix verified.
-
-![Focus — Room 1 Content](screenshots/23_focus_room1_content.png)
-
-### 24 Focus Room2 Content
-
-**Focus — Room 2 Content**: Focus mode: Room 2 content visible with dim overlay on other rooms.
-
-![Focus — Room 2 Content](screenshots/24_focus_room2_content.png)
-
-### 25 Focus Room3 Content
-
-**Focus — Room 3 Content**: Focus mode: Room 3 focused, agents and furniture visible.
-
-![Focus — Room 3 Content](screenshots/25_focus_room3_content.png)
-
-### 26 Focus Return Overview
-
-**Focus — Return Overview**: ESC returns to overview with all rooms visible.
-
-![Focus — Return Overview](screenshots/26_focus_return_overview.png)
-
-### 30 Stress 1Room Idle
-
-**Stress — 1 Room Idle**: Single team, single agent. Smallest valid config.
-
-![Stress — 1 Room Idle](screenshots/30_stress_1room_idle.png)
-
-### 31 Stress 1Room Active
-
-**Stress — 1 Room Active**: Single agent running in single-room layout.
-
-![Stress — 1 Room Active](screenshots/31_stress_1room_active.png)
-
-### 32 Stress 1Room Complete
-
-**Stress — 1 Room Complete**: Single agent completed. Clean final state.
-
-![Stress — 1 Room Complete](screenshots/32_stress_1room_complete.png)
-
-### 33 Stress 10Agents Idle
-
-**Stress — 10 Agents Idle**: 10 agents in one room at idle. Overflow icons visible for agents beyond desk capacity.
-
-![Stress — 10 Agents Idle](screenshots/33_stress_10agents_idle.png)
-
-### 34 Stress 10Agents Active
-
-**Stress — 10 Agents Active**: All 10 agents activated simultaneously. Overflow icons glow.
-
-![Stress — 10 Agents Active](screenshots/34_stress_10agents_active.png)
-
-### 35 Stress 10Agents Complete
-
-**Stress — 10 Agents Complete**: All 10 agents completed.
-
-![Stress — 10 Agents Complete](screenshots/35_stress_10agents_complete.png)
-
-### 36 Stress 6Rooms Default
-
-**Stress — 6 Rooms Default**: 6-team grid before fit view. May show clipping at default zoom.
-
-![Stress — 6 Rooms Default](screenshots/36_stress_6rooms_default.png)
-
-### 37 Stress 6Rooms Fit
-
-**Stress — 6 Rooms Fit**: Fit view with 6 rooms — all rooms must be fully visible (baseZoom floor fix).
-
-![Stress — 6 Rooms Fit](screenshots/37_stress_6rooms_fit.png)
-
-### 38 Stress 6Rooms Active
-
-**Stress — 6 Rooms Active**: All 12 agents active across 6 rooms simultaneously.
-
-![Stress — 6 Rooms Active](screenshots/38_stress_6rooms_active.png)
-
-### 39 Stress 6Rooms Complete
-
-**Stress — 6 Rooms Complete**: All agents completed across full 6-room grid.
-
-![Stress — 6 Rooms Complete](screenshots/39_stress_6rooms_complete.png)
-
-### 40 Realapi Before
-
-**Real API — Before**: Dashboard idle before real gpt-4o-mini LangGraph call.
-
-![Real API — Before](screenshots/40_realapi_before.png)
-
-### 41 Realapi Running
-
-**Real API — Running**: Actual gpt-4o-mini API call in progress via LangGraph adapter.
-
-![Real API — Running](screenshots/41_realapi_running.png)
-
-### 42 Realapi Complete
-
-**Real API — Complete**: Real API call returned. Event log shows live LLM cost tracking.
-
-![Real API — Complete](screenshots/42_realapi_complete.png)
-
-### 43 Settings Uniform
-
-**Settings — Uniform Mode**: Room sizing: Uniform — all rooms same size regardless of agent count.
-
-![Settings — Uniform Mode](screenshots/43_settings_uniform.png)
-
-### 44 Settings Adaptive
-
-**Settings — Adaptive Mode**: Room sizing: Adaptive — rooms scale with agent count.
-
-![Settings — Adaptive Mode](screenshots/44_settings_adaptive.png)
-
-### 45 Settings Compact
-
-**Settings — Compact Mode**: Room sizing: Compact — fixed 9-tile rooms, overflow shown as head icons.
-
-![Settings — Compact Mode](screenshots/45_settings_compact.png)
-
-### 46 Theme Dark
-
-**Theme — Dark**: Default dark pixel-art theme.
-
-![Theme — Dark](screenshots/46_theme_dark.png)
-
-### 47 Theme Light
-
-**Theme — Light**: Light theme — pastel colors, bright background.
-
-![Theme — Light](screenshots/47_theme_light.png)
+![Final Dashboard State](screenshots/27_final_dashboard_state.png)

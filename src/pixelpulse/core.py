@@ -72,6 +72,8 @@ class PixelPulse:
         title: str = "PixelPulse",
         theme: str = "dark",
         port: int = 8765,
+        storage: bool = True,
+        db_path: str | None = None,
     ) -> None:
         self._agents = normalize_agents(agents)
         self._teams = normalize_teams(teams)
@@ -83,6 +85,8 @@ class PixelPulse:
         self._app = None
         self._framework: str = ""
         self._adapters: dict[str, Any] = {}
+        self._storage_enabled = storage
+        self._db_path = db_path or "pixelpulse_runs.db"
 
         # Auto-create default team for agents without explicit team assignment
         assigned_teams = {ac.team for ac in self._agents.values()}
@@ -137,6 +141,7 @@ class PixelPulse:
             teams=self._teams,
             pipeline_stages=self._pipeline,
             title=self._title,
+            db_path=self._db_path if self._storage_enabled else None,
         )
 
     # ---- Event Emission ----

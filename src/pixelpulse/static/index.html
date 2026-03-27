@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PixelPulse — Agent Office</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' rx='2' fill='%2300d4ff'/><rect x='4' y='4' width='3' height='3' fill='%23000'/><rect x='9' y='4' width='3' height='3' fill='%23000'/><rect x='5' y='10' width='6' height='2' fill='%23000'/></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
@@ -100,6 +101,26 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
         </button>
       </div>
+      <!-- Replay controls — shown when replaying a recorded run -->
+      <div class="replay-controls" id="replay-controls" hidden>
+        <button class="replay-btn" id="replay-step-back" title="Step back">&#x23EE;</button>
+        <button class="replay-btn replay-btn--primary" id="replay-play" title="Play/Pause">&#x25B6;</button>
+        <button class="replay-btn" id="replay-step-fwd" title="Step forward">&#x23ED;</button>
+        <div class="replay-timeline">
+          <input type="range" id="replay-slider" class="replay-slider" min="0" max="100" value="0">
+          <div class="replay-markers" id="replay-markers"></div>
+        </div>
+        <span class="replay-time" id="replay-time">0:00 / 0:00</span>
+        <div class="replay-speed">
+          <button class="replay-speed-btn" data-speed="0.25">0.25x</button>
+          <button class="replay-speed-btn" data-speed="0.5">0.5x</button>
+          <button class="replay-speed-btn replay-speed-btn--active" data-speed="1">1x</button>
+          <button class="replay-speed-btn" data-speed="2">2x</button>
+          <button class="replay-speed-btn" data-speed="4">4x</button>
+        </div>
+        <button class="replay-btn replay-btn--record" id="replay-record" title="Record video">&#x23FA; REC</button>
+        <button class="replay-btn" id="replay-exit" title="Exit replay">&times;</button>
+      </div>
       <!-- Minimap — bottom-right corner of canvas area -->
       <canvas id="minimap-canvas" class="minimap" width="160" height="100" title="Minimap — click to pan"></canvas>
     </div>
@@ -118,6 +139,15 @@
       <section class="sidebar__section" data-sidebar-section="runs">
         <h3 class="sidebar__heading">Active Runs</h3>
         <div id="active-runs" class="runs">No active runs</div>
+      </section>
+      <section class="sidebar__section" data-sidebar-section="history">
+        <h3 class="sidebar__heading">
+          Run History
+          <button class="btn btn--xs btn--ghost" id="refresh-history" title="Refresh">&#x21BB;</button>
+        </h3>
+        <div id="run-history" class="run-history">
+          <div class="run-history__loading">Loading...</div>
+        </div>
       </section>
     </aside>
 
@@ -161,25 +191,94 @@
 
   <aside id="agent-detail" class="agent-detail" hidden>
     <header class="agent-detail__header">
-      <h3 id="agent-detail-name" class="agent-detail__name"></h3>
+      <div class="agent-detail__identity">
+        <div class="agent-detail__avatar" id="agent-detail-avatar"></div>
+        <div>
+          <h3 id="agent-detail-name" class="agent-detail__name"></h3>
+          <div class="agent-detail__meta">
+            <span id="agent-detail-team" class="agent-detail__team"></span>
+            <span id="agent-detail-status" class="agent-detail__value"></span>
+          </div>
+        </div>
+      </div>
       <button class="agent-detail__close" aria-label="Close">&times;</button>
     </header>
+    <div class="agent-detail__role-bar">
+      <span id="agent-detail-role" class="agent-detail__role"></span>
+      <span id="agent-detail-task" class="agent-detail__task"></span>
+    </div>
+    <nav class="agent-detail__tabs">
+      <button class="agent-detail__tab agent-detail__tab--active" data-tab="overview">Overview</button>
+      <button class="agent-detail__tab" data-tab="messages">Messages</button>
+      <button class="agent-detail__tab" data-tab="reasoning">Reasoning</button>
+      <button class="agent-detail__tab" data-tab="performance">Performance</button>
+    </nav>
     <div class="agent-detail__body">
-      <div class="agent-detail__meta">
-        <span id="agent-detail-team" class="agent-detail__team"></span>
-        <span id="agent-detail-role" class="agent-detail__role"></span>
+      <!-- Overview Tab -->
+      <div class="agent-detail__panel agent-detail__panel--active" data-panel="overview">
+        <div class="agent-detail__stats">
+          <div class="agent-stat">
+            <span class="agent-stat__value" id="stat-tasks">0</span>
+            <span class="agent-stat__label">Tasks</span>
+          </div>
+          <div class="agent-stat">
+            <span class="agent-stat__value" id="stat-cost">$0.00</span>
+            <span class="agent-stat__label">Cost</span>
+          </div>
+          <div class="agent-stat">
+            <span class="agent-stat__value" id="stat-messages">0</span>
+            <span class="agent-stat__label">Messages</span>
+          </div>
+          <div class="agent-stat">
+            <span class="agent-stat__value" id="stat-errors">0</span>
+            <span class="agent-stat__label">Errors</span>
+          </div>
+        </div>
+        <div class="agent-detail__section">
+          <h4>Recent Activity</h4>
+          <div id="agent-detail-events" class="agent-detail__events"></div>
+        </div>
+        <div class="agent-detail__section">
+          <h4>Communication Partners</h4>
+          <div id="agent-detail-partners" class="agent-detail__partners"></div>
+        </div>
       </div>
-      <div class="agent-detail__status">
-        <span class="agent-detail__label">Status</span>
-        <span id="agent-detail-status" class="agent-detail__value"></span>
+      <!-- Messages Tab -->
+      <div class="agent-detail__panel" data-panel="messages">
+        <div class="agent-detail__filter">
+          <select id="msg-direction-filter" class="agent-detail__select">
+            <option value="">All</option>
+            <option value="sent">Sent</option>
+            <option value="received">Received</option>
+          </select>
+          <input type="text" id="msg-search" class="agent-detail__search" placeholder="Search messages...">
+        </div>
+        <div id="agent-detail-messages" class="agent-detail__messages"></div>
       </div>
-      <div class="agent-detail__section">
-        <h4>Recent Activity</h4>
-        <div id="agent-detail-events" class="agent-detail__events"></div>
+      <!-- Reasoning Tab -->
+      <div class="agent-detail__panel" data-panel="reasoning">
+        <div class="agent-detail__filter">
+          <input type="text" id="reasoning-search" class="agent-detail__search" placeholder="Search reasoning...">
+        </div>
+        <div class="agent-detail__reasoning-cost" id="reasoning-total-cost">
+          Total reasoning cost: $0.0000
+        </div>
+        <div id="agent-detail-reasoning" class="agent-detail__reasoning"></div>
       </div>
-      <div class="agent-detail__section">
-        <h4>Cost</h4>
-        <span id="agent-detail-cost" class="agent-detail__cost"></span>
+      <!-- Performance Tab -->
+      <div class="agent-detail__panel" data-panel="performance">
+        <div class="agent-detail__section">
+          <h4>Cost Breakdown</h4>
+          <div id="agent-perf-cost" class="agent-detail__perf-chart"></div>
+        </div>
+        <div class="agent-detail__section">
+          <h4>Token Usage</h4>
+          <div id="agent-perf-tokens" class="agent-detail__perf-chart"></div>
+        </div>
+        <div class="agent-detail__section">
+          <h4>Task Timeline</h4>
+          <div id="agent-perf-timeline" class="agent-detail__perf-chart"></div>
+        </div>
       </div>
     </div>
   </aside>

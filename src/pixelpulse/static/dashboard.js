@@ -15,6 +15,9 @@ import * as SettingsPanel from "./modules/settings-panel.js";
 import * as Keyboard from "./modules/keyboard.js";
 import * as Toasts from "./modules/toasts.js";
 import * as AgentDetail from "./modules/agent-detail.js";
+import * as RunHistory from "./modules/run-history.js";
+import * as Replay from "./modules/replay.js";
+import * as VideoExport from "./modules/video-export.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
   // 0. Apply CSS theme before first render
@@ -41,7 +44,26 @@ document.addEventListener("DOMContentLoaded", async () => {
   // 7. Ready agent detail panel for clicks
   AgentDetail.init();
 
-  // 8. Connect WebSocket last (may trigger toasts)
+  // 8. Initialize replay engine
+  Replay.init({
+    onRecord: () => {
+      const canvas = document.getElementById("office-canvas");
+      if (canvas) VideoExport.toggleRecording(canvas);
+    },
+    onExit: () => {
+      RunHistory.loadRuns(); // Refresh list after exiting replay
+    },
+  });
+
+  // 9. Initialize video export
+  VideoExport.init();
+
+  // 10. Initialize run history sidebar
+  RunHistory.init((runId) => {
+    Replay.startReplay(runId);
+  });
+
+  // 11. Connect WebSocket last (may trigger toasts)
   connect();
 
   // Theme toggle switch (dark / light)
