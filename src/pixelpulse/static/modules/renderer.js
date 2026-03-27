@@ -260,15 +260,21 @@ function _collidesWithFurniture(teamId, col, row) {
   return false;
 }
 
-// Room walls — hard boundary
-const WALL_MIN_COL = 1.2;
-const WALL_MAX_COL = ROOM_COLS - 1.8;
-const WALL_MIN_ROW = 1.2;
-const WALL_MAX_ROW = ROOM_ROWS - 1.8;
+// Room walls — per-room bounds derived from dynamic room dimensions
+function getRoomBounds(teamId) {
+  const dims = roomDims[teamId] || { cols: 9, rows: 9 };
+  return {
+    minCol: 1.2,
+    maxCol: dims.cols - 1.8,
+    minRow: 1.2,
+    maxRow: dims.rows - 1.8,
+  };
+}
 
-function _isInsideRoom(col, row) {
-  return col >= WALL_MIN_COL && col <= WALL_MAX_COL &&
-         row >= WALL_MIN_ROW && row <= WALL_MAX_ROW;
+function _isInsideRoom(col, row, teamId) {
+  const b = getRoomBounds(teamId);
+  return col >= b.minCol && col <= b.maxCol &&
+         row >= b.minRow && row <= b.maxRow;
 }
 
 // Agent-to-agent collision: check if position overlaps any other roaming agent
@@ -287,7 +293,7 @@ function _collidesWithAgent(selfName, teamId, col, row) {
 
 // Hard collision check: furniture + walls only (agents use soft separation, not hard block)
 function _isBlocked(_selfName, teamId, col, row) {
-  return _collidesWithFurniture(teamId, col, row) || !_isInsideRoom(col, row);
+  return _collidesWithFurniture(teamId, col, row) || !_isInsideRoom(col, row, teamId);
 }
 
 // Per-tick movement with collision response (slide along furniture/walls)
@@ -314,7 +320,7 @@ function _isPathClear(teamId, fromCol, fromRow, toCol, toRow) {
     const t = i / steps;
     const c = fromCol + dx * t;
     const r = fromRow + dy * t;
-    if (_collidesWithFurniture(teamId, c, r) || !_isInsideRoom(c, r)) return false;
+    if (_collidesWithFurniture(teamId, c, r) || !_isInsideRoom(c, r, teamId)) return false;
   }
   return true;
 }
@@ -356,15 +362,17 @@ function initRoam(agentName, deskCol, deskRow, teamId) {
 
 function _pickSafeTarget(teamId) {
   // Try up to 15 random spots; pick one that doesn't collide with furniture
+  const b = getRoomBounds(teamId);
   for (let attempt = 0; attempt < 15; attempt++) {
-    const col = WALL_MIN_COL + 0.5 + Math.random() * (WALL_MAX_COL - WALL_MIN_COL - 1);
-    const row = WALL_MIN_ROW + 0.5 + Math.random() * (WALL_MAX_ROW - WALL_MIN_ROW - 1);
+    const col = b.minCol + 0.5 + Math.random() * (b.maxCol - b.minCol - 1);
+    const row = b.minRow + 0.5 + Math.random() * (b.maxRow - b.minRow - 1);
     if (!_collidesWithFurniture(teamId, col, row)) {
       return { col, row };
     }
   }
   // Fallback: center of room (always safe)
-  return { col: ROOM_COLS / 2, row: ROOM_ROWS / 2 };
+  const dims = roomDims[teamId] || { cols: 9, rows: 9 };
+  return { col: dims.cols / 2, row: dims.rows / 2 };
 }
 
 function _buildWaypoints(rs) {
@@ -641,11 +649,13 @@ function tickRoaming() {
         const pushX = (dx / dist) * strength;
         const pushY = (dy / dist) * strength;
 
-        // Push both agents apart equally, respecting walls & furniture
-        const aCol = Math.max(WALL_MIN_COL, Math.min(rsA.col + pushX, WALL_MAX_COL));
-        const aRow = Math.max(WALL_MIN_ROW, Math.min(rsA.row + pushY, WALL_MAX_ROW));
-        const bCol = Math.max(WALL_MIN_COL, Math.min(rsB.col - pushX, WALL_MAX_COL));
-        const bRow = Math.max(WALL_MIN_ROW, Math.min(rsB.row - pushY, WALL_MAX_ROW));
+        // Push both agents apart equally, respecting per-room walls & furniture
+        const bA = getRoomBounds(rsA.roomTeamId);
+        const bB = getRoomBounds(rsB.roomTeamId);
+        const aCol = Math.max(bA.minCol, Math.min(rsA.col + pushX, bA.maxCol));
+        const aRow = Math.max(bA.minRow, Math.min(rsA.row + pushY, bA.maxRow));
+        const bCol = Math.max(bB.minCol, Math.min(rsB.col - pushX, bB.maxCol));
+        const bRow = Math.max(bB.minRow, Math.min(rsB.row - pushY, bB.maxRow));
 
         if (!_collidesWithFurniture(rsA.roomTeamId, aCol, aRow)) {
           rsA.col = aCol; rsA.row = aRow;
@@ -659,7 +669,7 @@ function tickRoaming() {
         const nudge = 0.15;
         const aCol = rsA.col + Math.cos(angle) * nudge;
         const aRow = rsA.row + Math.sin(angle) * nudge;
-        if (!_collidesWithFurniture(rsA.roomTeamId, aCol, aRow) && _isInsideRoom(aCol, aRow)) {
+        if (!_collidesWithFurniture(rsA.roomTeamId, aCol, aRow) && _isInsideRoom(aCol, aRow, rsA.roomTeamId)) {
           rsA.col = aCol; rsA.row = aRow;
         }
       }
@@ -1170,8 +1180,8 @@ function drawOrchestratorZone(offsetX, offsetY, totalW, s) {
   const orch = getOrchestrator();
   const pipeline = getPipeline();
 
-  // Zone position: between the two rows of rooms
-  const zy = offsetY + ROOM_ROWS * s;
+  // Zone position: below the first row of rooms
+  const zy = offsetY + maxRoomRows * s;
   const zx = offsetX;
   const zw = totalW;
   const zh = ROOM_GAP * s;
@@ -1335,7 +1345,7 @@ function drawOrchestratorZone(offsetX, offsetY, totalW, s) {
 
 // ---- Room Layout ----
 
-function buildRoomLayout(team, teamId) {
+function buildRoomLayout(team, teamId, roomCols, roomRows) {
   const agents = team.agents;
   const items = [];
 
@@ -1347,8 +1357,8 @@ function buildRoomLayout(team, teamId) {
   const agentOffset = 1.9;                           // agent sits behind monitor (sweet spot)
   const gridW = cols > 1 ? deskSpacingX : 0;         // total width of desk cluster
   const gridH = (rows - 1) * deskSpacingY + agentOffset; // include agent above top desk
-  const startCol = (ROOM_COLS - gridW - 2) / 2;      // center horizontally (-2 for desk width)
-  const startRow = (ROOM_ROWS - gridH - 1) / 2 + agentOffset; // center the full unit, desk anchor
+  const startCol = (roomCols - gridW - 2) / 2;       // center horizontally (-2 for desk width)
+  const startRow = (roomRows - gridH - 1) / 2 + agentOffset; // center the full unit, desk anchor
 
   for (let i = 0; i < agents.length; i++) {
     const col = startCol + (i % 2) * deskSpacingX;
@@ -1372,7 +1382,7 @@ function buildRoomLayout(team, teamId) {
     items.push({ type: "desk", col, row });
   }
 
-  // Decorations — spread to room corners
+  // Decorations — scale with room size, spread to corners
   const teamDecor = {
     research:  "whiteboard",
     design:    "easel",
@@ -1380,11 +1390,21 @@ function buildRoomLayout(team, teamId) {
     learning:  "trophy",
   };
   const decor = teamDecor[teamId];
-  items.push({ type: "plant", col: 0.5, row: 0.5 });                    // top-left corner
+  items.push({ type: "plant", col: 0.5, row: 0.5 });                     // top-left corner
   if (decor) {
-    items.push({ type: decor, col: ROOM_COLS - 1.5, row: 0.5 });        // top-right corner
+    items.push({ type: decor, col: roomCols - 1.5, row: 0.5 });          // top-right corner
   }
-  items.push({ type: "bookshelf", col: 0.5, row: ROOM_ROWS - 2.25 });  // bottom-left corner (inside room)
+  items.push({ type: "bookshelf", col: 0.5, row: roomRows - 2.25 });    // bottom-left corner (inside room)
+
+  // Extra furniture for larger rooms
+  if (roomCols >= 12) {
+    items.push({ type: "plant", col: roomCols - 1.5, row: roomRows - 2.25 });
+    items.push({ type: "bookshelf", col: roomCols - 1.5, row: Math.floor(roomRows / 2) });
+  }
+  if (roomCols >= 14) {
+    items.push({ type: "plant", col: Math.floor(roomCols / 2), row: 0.5 });
+    items.push({ type: "bookshelf", col: 0.5, row: Math.floor(roomRows / 2) });
+  }
 
   // Register furniture positions for collision detection
   _registerFurniture(teamId, items);
