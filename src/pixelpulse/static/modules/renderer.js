@@ -1371,9 +1371,9 @@ function render() {
         break;
       }
       case "overflow-badge": {
-        const fontSize = Math.max(7, Math.round(7 * zoom * 0.5));
+        const fontSize = Math.max(10, Math.round(10 * zoom * 0.6));
         ctx.save();
-        ctx.font = `${fontSize}px "JetBrains Mono", monospace`;
+        ctx.font = `600 ${fontSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
         ctx.fillStyle = "#94a3b8";
         ctx.textAlign = "left";
         ctx.textBaseline = "middle";
@@ -1402,7 +1402,7 @@ function render() {
   // ---- Zoom/Pan hint (bottom-left) ----
   if (userZoom !== 1 || panX !== 0 || panY !== 0) {
     ctx.save();
-    ctx.font = '11px "JetBrains Mono", monospace';
+    ctx.font = '12px system-ui, -apple-system, "Segoe UI", sans-serif';
     ctx.fillStyle = "#475569";
     ctx.textAlign = "left";
     ctx.textBaseline = "bottom";
@@ -1410,7 +1410,7 @@ function render() {
     ctx.restore();
   } else {
     ctx.save();
-    ctx.font = '10px "JetBrains Mono", monospace';
+    ctx.font = '11px system-ui, -apple-system, "Segoe UI", sans-serif';
     ctx.fillStyle = "#334155";
     ctx.textAlign = "left";
     ctx.textBaseline = "bottom";
@@ -1472,9 +1472,9 @@ function drawRoomLabel(rx, ry, team, teamId, roomCols) {
   const totalCount = agentStates.length;
 
   // Department name — big, readable
-  const nameSize = Math.max(11, Math.round(12 * zoom * 0.7));
+  const nameSize = Math.max(13, Math.round(14 * zoom * 0.7));
   ctx.save();
-  ctx.font = `900 ${nameSize}px "FS Pixel Sans Unicode", "Press Start 2P", monospace`;
+  ctx.font = `700 ${nameSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
@@ -1500,7 +1500,7 @@ function drawRoomLabel(rx, ry, team, teamId, roomCols) {
   ctx.fillText(text, cx, cy);
 
   // Activity counter badge — "2/4 active" to the right of the label
-  const badgeSize = Math.max(7, Math.round(7 * zoom * 0.55));
+  const badgeSize = Math.max(10, Math.round(10 * zoom * 0.6));
   ctx.font = `700 ${badgeSize}px "JetBrains Mono", monospace`;
   const badgeText = `${activeCount}/${totalCount}`;
   const badgeW = ctx.measureText(badgeText).width + badgeSize * 1.2;
@@ -1523,8 +1523,8 @@ function drawRoomLabel(rx, ry, team, teamId, roomCols) {
   ctx.fillText(badgeText, badgeX + badgeW / 2, cy);
 
   // Role subtitle
-  const roleSize = Math.max(8, Math.round(8 * zoom * 0.55));
-  ctx.font = `${roleSize}px "JetBrains Mono", monospace`;
+  const roleSize = Math.max(11, Math.round(11 * zoom * 0.6));
+  ctx.font = `${roleSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
   ctx.textAlign = "center";
   ctx.fillStyle = "#64748b";
   ctx.globalAlpha = 0.8;
@@ -1674,8 +1674,8 @@ function drawFocusOverlay(focusedTeamId, offsetX, offsetY, s, orchOffset) {
 
   // Hint text: "ESC or 0 to return"
   ctx.save();
-  const hintSize = Math.max(8, Math.round(zoom * 3.5));
-  ctx.font = `${hintSize}px "JetBrains Mono", monospace`;
+  const hintSize = Math.max(11, Math.round(zoom * 4));
+  ctx.font = `${hintSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "top";
   ctx.fillStyle = "#94a3b8";
@@ -1710,8 +1710,8 @@ function drawCollapsedBadge(rx, ry, teamId, team) {
   ctx.stroke();
 
   // Team icon (first char of label)
-  const iconSize = Math.max(7, Math.round(s * 0.35));
-  ctx.font = `900 ${iconSize}px "FS Pixel Sans Unicode", monospace`;
+  const iconSize = Math.max(10, Math.round(s * 0.38));
+  ctx.font = `700 ${iconSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
   ctx.globalAlpha = 1;
@@ -1719,8 +1719,8 @@ function drawCollapsedBadge(rx, ry, teamId, team) {
   ctx.fillText(team.icon || team.label[0], rx + s * 0.15, ry + bh / 2);
 
   // Team name
-  const nameSize = Math.max(6, Math.round(s * 0.28));
-  ctx.font = `700 ${nameSize}px "JetBrains Mono", monospace`;
+  const nameSize = Math.max(9, Math.round(s * 0.32));
+  ctx.font = `700 ${nameSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
   ctx.fillStyle = style.accent;
   ctx.fillText(team.label.toUpperCase().slice(0, 6), rx + s * 0.45, ry + bh / 2);
 
@@ -1728,8 +1728,8 @@ function drawCollapsedBadge(rx, ry, teamId, team) {
   const agentStates = team.agents.map(n => getAgent(n)).filter(Boolean);
   const activeCount = agentStates.filter(a => a.status === "active").length;
   const countText = `${activeCount}/${team.agents.length}`;
-  const countSize = Math.max(5, Math.round(s * 0.25));
-  ctx.font = `600 ${countSize}px "JetBrains Mono", monospace`;
+  const countSize = Math.max(8, Math.round(s * 0.28));
+  ctx.font = `600 ${countSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
   ctx.textAlign = "right";
   ctx.fillStyle = activeCount > 0 ? style.accent : "#475569";
   ctx.fillText(countText, rx + bw - s * 0.35, ry + bh / 2);
@@ -1791,8 +1791,8 @@ function drawOrchestratorZone(offsetX, offsetY, totalW, s) {
   ctx.stroke();
 
   // ---- Orchestrator title ----
-  const titleSize = Math.max(9, Math.round(9 * zoom * 0.6));
-  ctx.font = `900 ${titleSize}px "FS Pixel Sans Unicode", "Press Start 2P", monospace`;
+  const titleSize = Math.max(13, Math.round(13 * zoom * 0.65));
+  ctx.font = `700 ${titleSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   const titleY = zy + zh * 0.2;
@@ -1835,9 +1835,9 @@ function drawOrchestratorZone(offsetX, offsetY, totalW, s) {
   }
 
   // Draw stage nodes
-  const labelSize = Math.max(6, Math.round(6 * zoom * 0.5));
+  const labelSize = Math.max(10, Math.round(10 * zoom * 0.55));
   ctx.textBaseline = "top";
-  ctx.font = `600 ${labelSize}px "JetBrains Mono", monospace`;
+  ctx.font = `600 ${labelSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
 
   for (let i = 0; i < stageCount; i++) {
     const nx = timelineX + i * stageSpacing;
@@ -1918,7 +1918,7 @@ function drawOrchestratorZone(offsetX, offsetY, totalW, s) {
 
   // ---- Orchestrator message at bottom ----
   if (orch.message) {
-    const msgSize = Math.max(7, Math.round(7 * zoom * 0.5));
+    const msgSize = Math.max(10, Math.round(10 * zoom * 0.55));
     ctx.font = `${msgSize}px "JetBrains Mono", monospace`;
     ctx.fillStyle = "#64748b";
     ctx.textAlign = "center";
@@ -2240,14 +2240,14 @@ function drawAgent(x, y, agentName, teamId, roaming) {
 
   if (agent.status === "active" || agent.status === "waiting") {
     // ---- Active/Waiting: draw a mini status card to the right ----
-    const cardNameSize = Math.max(7, Math.round(zoom * 3.2));
-    const cardTaskSize = Math.max(6, Math.round(zoom * 2.4));
-    ctx.font = `700 ${cardNameSize}px "JetBrains Mono", monospace`;
+    const cardNameSize = Math.max(11, Math.round(zoom * 4.5));
+    const cardTaskSize = Math.max(10, Math.round(zoom * 3.5));
+    ctx.font = `700 ${cardNameSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
     const nameW = ctx.measureText(displayName).width;
 
     // Task text (truncated)
     const taskText = agent.task ? agent.task.slice(0, 30) + (agent.task.length > 30 ? "…" : "") : "";
-    ctx.font = `${cardTaskSize}px "JetBrains Mono", monospace`;
+    ctx.font = `${cardTaskSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
     const taskW = taskText ? ctx.measureText(taskText).width : 0;
 
     const cardPadX = zoom * 2;
@@ -2271,13 +2271,13 @@ function drawAgent(x, y, agentName, teamId, roaming) {
 
     // Agent name
     ctx.globalAlpha = 1;
-    ctx.font = `700 ${cardNameSize}px "JetBrains Mono", monospace`;
+    ctx.font = `700 ${cardNameSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
     ctx.fillStyle = agent.status === "active" ? accent : "#ffae00";
     ctx.fillText(displayName, cardX + cardPadX + zoom * 1.5, cardY + cardPadY);
 
     // Task text
     if (taskText) {
-      ctx.font = `${cardTaskSize}px "JetBrains Mono", monospace`;
+      ctx.font = `${cardTaskSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
       ctx.fillStyle = "#94a3b8";
       ctx.fillText(taskText, cardX + cardPadX + zoom * 1.5, cardY + cardPadY + cardNameSize + 2);
     }
@@ -2294,8 +2294,8 @@ function drawAgent(x, y, agentName, teamId, roaming) {
     ctx.shadowBlur = 0;
   } else {
     // ---- Idle/error: compact name label to the right (wraps if 2+ words) ----
-    const nameSize = Math.max(7, Math.round(zoom * 3));
-    ctx.font = `600 ${nameSize}px "JetBrains Mono", monospace`;
+    const nameSize = Math.max(11, Math.round(zoom * 4));
+    ctx.font = `600 ${nameSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
     ctx.fillStyle = agent.status === "error" ? "#f85149" : "#475569";
     const words = displayName.split(" ");
     const maxLabelW = zoom * 28;
@@ -2355,14 +2355,14 @@ function drawAllBubbles() {
 }
 
 function drawWordWrappedBubble(x, y, text, type, alpha) {
-  const fontSize = Math.max(8, Math.round(zoom * 3));
-  const maxWidth = Math.max(100, zoom * 55);
+  const fontSize = Math.max(12, Math.round(zoom * 4));
+  const maxWidth = Math.max(140, zoom * 65);
   const lineHeight = fontSize * 1.3;
   const padding = zoom * 3;
 
   ctx.save();
   ctx.globalAlpha = alpha;
-  ctx.font = `${fontSize}px "JetBrains Mono", monospace`;
+  ctx.font = `${fontSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
 
   // Word wrap
   const words = text.split(" ");
