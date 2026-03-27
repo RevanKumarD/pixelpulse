@@ -20,6 +20,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from pixelpulse.bus import EventBus, get_event_bus, set_main_loop
+from pixelpulse.otel import parse_otlp_spans, span_to_events
 from pixelpulse.protocol import to_dashboard_event
 
 if TYPE_CHECKING:
@@ -126,6 +127,125 @@ def create_app(
         dashboard_event = to_dashboard_event(event)
         await bus.emit(dashboard_event)
         return JSONResponse({"accepted": 1})
+
+    # ---- OTLP JSON Trace Ingestion ----
+
+    @app.post("/v1/traces")
+    async def ingest_traces(body: dict) -> JSONResponse:
+        """Accept OTLP JSON traces and convert to PixelPulse dashboard events.
+
+        This endpoint allows ANY OpenTelemetry-instrumented system to send
+        traces to PixelPulse without the Python SDK. Configure your OTel
+        exporter to point at ``http://<host>:<port>/v1/traces``.
+
+        The expected body follows the OTLP JSON format::
+
+            {
+              "resourceSpans": [{
+                "scopeSpans": [{
+                  "spans": [{ "name": "...", "attributes": [...], ... }]
+                }]
+              }]
+            }
+        """
+        spans = parse_otlp_spans(body)
+        accepted = 0
+        for span in spans:
+            pp_events = span_to_events(span)
+            for event in pp_events:
+                dashboard_event = to_dashboard_event(event)
+                await bus.emit(dashboard_event)
+                accepted += 1
+        return JSONResponse({"accepted": accepted})
+
+    # ---- Claude Code Hook Receiver ----
+
+    _claude_code_adapter = None
+
+    @app.post("/hooks/claude-code")
+    async def claude_code_hook(event: dict) -> JSONResponse:
+        """Receive Claude Code hook events and translate to PixelPulse events.
+
+        Configure Claude Code to POST to this endpoint by adding HTTP hooks
+        to ``.claude/settings.json``. Use ``adapter.generate_hooks_config()``
+        to generate the config.
+        """
+        nonlocal _claude_code_adapter
+        if _claude_code_adapter is None:
+            from pixelpulse.adapters.claude_code import ClaudeCodeAdapter
+
+            # Create a minimal PixelPulse-like emitter that uses the bus
+            class _BusEmitter:
+                def __init__(self, bus_ref, agents_ref):
+                    self._bus = bus_ref
+                    self._agents = agents_ref
+                    self._framework = "claude_code"
+
+                def run_started(self, run_id, name=""):
+                    asyncio.get_event_loop().create_task(
+                        self._bus.emit(to_dashboard_event({
+                            "type": "run_started", "run_id": run_id, "name": name
+                        }))
+                    )
+
+                def run_completed(self, run_id, status="completed", total_cost=0):
+                    asyncio.get_event_loop().create_task(
+                        self._bus.emit(to_dashboard_event({
+                            "type": "run_completed", "run_id": run_id,
+                            "status": status, "total_cost": total_cost,
+                        }))
+                    )
+
+                def agent_started(self, agent, task=""):
+                    asyncio.get_event_loop().create_task(
+                        self._bus.emit(to_dashboard_event({
+                            "type": "agent_started", "agent": agent, "task": task
+                        }))
+                    )
+
+                def agent_thinking(self, agent, thought=""):
+                    asyncio.get_event_loop().create_task(
+                        self._bus.emit(to_dashboard_event({
+                            "type": "agent_thinking", "agent": agent, "thought": thought
+                        }))
+                    )
+
+                def agent_completed(self, agent, output=""):
+                    asyncio.get_event_loop().create_task(
+                        self._bus.emit(to_dashboard_event({
+                            "type": "agent_completed", "agent": agent, "output": output
+                        }))
+                    )
+
+                def agent_error(self, agent, error=""):
+                    asyncio.get_event_loop().create_task(
+                        self._bus.emit(to_dashboard_event({
+                            "type": "agent_error", "agent": agent, "error": error
+                        }))
+                    )
+
+                def artifact_created(self, agent, artifact_type="", content=""):
+                    asyncio.get_event_loop().create_task(
+                        self._bus.emit(to_dashboard_event({
+                            "type": "artifact_created", "agent": agent,
+                            "artifact_type": artifact_type, "content": content,
+                        }))
+                    )
+
+                def cost_update(self, agent, cost=0, tokens_in=0, tokens_out=0, model=""):
+                    asyncio.get_event_loop().create_task(
+                        self._bus.emit(to_dashboard_event({
+                            "type": "cost_update", "agent": agent, "cost": cost,
+                            "tokens_in": tokens_in, "tokens_out": tokens_out, "model": model,
+                        }))
+                    )
+
+            emitter = _BusEmitter(bus, agents)
+            _claude_code_adapter = ClaudeCodeAdapter(emitter)
+            _claude_code_adapter.instrument()
+
+        response = _claude_code_adapter.on_hook_event(event)
+        return JSONResponse(response)
 
     # ---- WebSocket ----
 

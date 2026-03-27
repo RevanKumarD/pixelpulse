@@ -22,5 +22,13 @@ __version__ = "0.1.0"
 
 from pixelpulse.config import AgentConfig, TeamConfig
 from pixelpulse.core import PixelPulse
+from pixelpulse.protocol import create_event, validate_event
 
-__all__ = ["PixelPulse", "AgentConfig", "TeamConfig", "__version__"]
+__all__ = [
+    "PixelPulse",
+    "AgentConfig",
+    "TeamConfig",
+    "create_event",
+    "validate_event",
+    "__version__",
+]
