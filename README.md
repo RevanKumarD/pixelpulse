@@ -6,7 +6,7 @@ Real-time pixel-art dashboard for multi-agent systems. Production observability 
 [![Python](https://img.shields.io/pypi/pyversions/pixelpulse.svg)](https://pypi.org/project/pixelpulse/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![CI](https://github.com/revan-ar/pixelpulse/actions/workflows/ci.yml/badge.svg)](https://github.com/revan-ar/pixelpulse/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-306%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-333%20passing-brightgreen.svg)](tests/)
 
 ![Dashboard Overview](tests/visual/screenshots/01_dashboard_idle.png)
 
@@ -203,14 +203,14 @@ The dashboard automatically adapts to any number of teams and agents:
 
 ## Test Coverage
 
-306 tests across 4 layers:
+333 tests across 4 layers:
 
 | Layer | Count | What it proves |
 |-------|-------|----------------|
 | Unit | 233 | Adapter logic, decorators, protocol, event bus in isolation |
 | E2E (graph-level) | 35 | Real LangGraph/OpenAI pipelines with mocked pp boundary |
 | Integration | 8 | `pp.agent_started()` → EventBus singleton → `/api/events` wiring |
-| Functional | 25 | All 4 adapter paths → real pp → bus → HTTP endpoint, no mocks |
+| Functional | 52 | All 7 adapter paths → real pp → bus → HTTP endpoint, no mocks |
 
 The integration + functional tests are the critical layer: they're the only ones that prove
 `emit_sync()` correctly lands events in `/api/events` in a real async context.
