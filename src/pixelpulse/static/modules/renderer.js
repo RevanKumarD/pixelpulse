@@ -1050,6 +1050,23 @@ export function init() {
   applyBottomH(getSetting("bottomBarHeight") ?? 220);
   onSettingChange("bottomBarHeight", applyBottomH);
 
+  // Sidebar section toggles (pipeline, agents, runs, cost)
+  for (const sectionKey of ["pipeline", "agents", "runs"]) {
+    const section = document.querySelector(`[data-sidebar-section="${sectionKey}"]`);
+    if (!section) continue;
+    const settingKey = `sidebarSections.${sectionKey}`;
+    const applyVis = (v) => { section.style.display = v === false ? "none" : ""; };
+    applyVis(getSetting(settingKey));
+    onSettingChange(settingKey, applyVis);
+  }
+  // Cost pill toggle
+  const costPill = document.getElementById("cost-pill");
+  if (costPill) {
+    const applyCostVis = (v) => { costPill.style.display = v === false ? "none" : ""; };
+    applyCostVis(getSetting("sidebarSections.cost"));
+    onSettingChange("sidebarSections.cost", applyCostVis);
+  }
+
   // Log filter inputs trigger re-render on change
   for (const id of ["events-search", "events-team-filter"]) {
     const el = document.getElementById(id);
