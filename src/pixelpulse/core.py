@@ -8,7 +8,7 @@ from __future__ import annotations
 import logging
 import threading
 import webbrowser
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 import uvicorn
 
@@ -83,6 +83,7 @@ class PixelPulse:
         self._bus = get_event_bus()
         self._app = None
         self._framework: str = ""
+        self._adapters: dict[str, Any] = {}
 
         # Auto-create default team for agents without explicit team assignment
         assigned_teams = {ac.team for ac in self._agents.values()}
@@ -245,7 +246,8 @@ class PixelPulse:
     def adapter(self, framework: str) -> Any:
         """Get a framework-specific adapter.
 
-        Supported frameworks: ``crewai``, ``langgraph``, ``openai``, ``autogen``, ``generic``
+        Supported frameworks: ``crewai``, ``langgraph``, ``openai``, ``autogen``,
+        ``claude_code``, ``generic``
         """
         self._framework = framework
 
@@ -261,11 +263,51 @@ class PixelPulse:
         elif framework == "autogen":
             from pixelpulse.adapters.autogen import AutoGenAdapter
             return AutoGenAdapter(self)
+        elif framework == "claude_code":
+            from pixelpulse.adapters.claude_code import ClaudeCodeAdapter
+            return ClaudeCodeAdapter(self)
         elif framework == "generic":
             from pixelpulse.adapters.generic import GenericAdapter
             return GenericAdapter(self)
         else:
             raise ValueError(
                 f"Unknown framework: {framework}. "
-                f"Supported: crewai, langgraph, openai, autogen, generic"
+                f"Supported: crewai, langgraph, openai, autogen, claude_code, generic"
             )
+
+    def auto_instrument(self) -> dict[str, bool]:
+        """Auto-detect installed agent frameworks and instrument them.
+
+        Tries to import each supported framework package. When a framework is
+        found, its adapter is created and stored in ``self._adapters``.  This
+        method never raises — a missing package simply records ``False``.
+
+        Returns:
+            A mapping of framework name to whether it was detected and
+            instrumented, e.g. ``{"crewai": True, "langgraph": False, ...}``.
+
+        Example::
+
+            pp = PixelPulse(agents={...})
+            detected = pp.auto_instrument()
+            # {"crewai": False, "langgraph": True, "openai": False, "autogen": False}
+        """
+        # (adapter_name, package_to_import)
+        _frameworks = [
+            ("crewai", "crewai"),
+            ("langgraph", "langgraph"),
+            ("openai", "agents"),
+            ("autogen", "autogen"),
+        ]
+
+        results: dict[str, bool] = {}
+        for adapter_name, package_name in _frameworks:
+            try:
+                __import__(package_name)
+                self._adapters[adapter_name] = self.adapter(adapter_name)
+                results[adapter_name] = True
+                logger.info("Auto-instrumented: %s", adapter_name)
+            except ImportError:
+                results[adapter_name] = False
+
+        return results
