@@ -207,7 +207,7 @@ class TestAsyncDecorator:
         async def async_work():
             return "async result"
 
-        result = asyncio.get_event_loop().run_until_complete(async_work())
+        result = asyncio.run(async_work())
         assert result == "async result"
 
     def test_async_agent_started_emitted(self, mock_pp):
@@ -215,7 +215,7 @@ class TestAsyncDecorator:
         async def async_work():
             return "done"
 
-        asyncio.get_event_loop().run_until_complete(async_work())
+        asyncio.run(async_work())
         mock_pp.agent_started.assert_called_once()
         assert mock_pp.agent_started.call_args[0][0] == "async-agent"
 
@@ -224,7 +224,7 @@ class TestAsyncDecorator:
         async def async_work():
             return "async output"
 
-        asyncio.get_event_loop().run_until_complete(async_work())
+        asyncio.run(async_work())
         mock_pp.agent_completed.assert_called_once()
         output = mock_pp.agent_completed.call_args[1].get("output", "")
         assert "async output" in output
@@ -235,7 +235,7 @@ class TestAsyncDecorator:
             raise ValueError("async error")
 
         with pytest.raises(ValueError, match="async error"):
-            asyncio.get_event_loop().run_until_complete(async_fail())
+            asyncio.run(async_fail())
 
         mock_pp.agent_error.assert_called_once()
         error = mock_pp.agent_error.call_args[1].get("error", "")

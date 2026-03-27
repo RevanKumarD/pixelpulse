@@ -30,18 +30,26 @@ def _make_pp(**kwargs) -> PixelPulse:
 class TestAutoInstrumentReturnType:
     def test_returns_dict(self):
         pp = _make_pp()
-        # All frameworks will be absent in test environment → all False
-        result = pp.auto_instrument()
+        with patch.dict(sys.modules, {
+            "crewai": None, "langgraph": None, "agents": None, "autogen": None,
+        }):
+            result = pp.auto_instrument()
         assert isinstance(result, dict)
 
     def test_returns_all_expected_keys(self):
         pp = _make_pp()
-        result = pp.auto_instrument()
+        with patch.dict(sys.modules, {
+            "crewai": None, "langgraph": None, "agents": None, "autogen": None,
+        }):
+            result = pp.auto_instrument()
         assert set(result.keys()) == {"crewai", "langgraph", "openai", "autogen"}
 
     def test_values_are_booleans(self):
         pp = _make_pp()
-        result = pp.auto_instrument()
+        with patch.dict(sys.modules, {
+            "crewai": None, "langgraph": None, "agents": None, "autogen": None,
+        }):
+            result = pp.auto_instrument()
         for key, val in result.items():
             assert isinstance(val, bool), f"{key} value should be bool, got {type(val)}"
 
