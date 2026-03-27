@@ -223,6 +223,10 @@ let mouseX = 0, mouseY = 0;
 // Agent screen positions for particles & tooltips
 const agentPositions = {}; // { agentName: { x, y, w, h } }
 
+// Room label hit areas — updated each render() frame for click detection
+// { teamId: { x, y, w, h } } in CSS pixels (not DPR-scaled)
+const roomLabelRects = {};
+
 // ---- Roaming System — idle agents wander the office with personality ----
 // States: "seated" → "paused" → "walking" → "activity" → "paused" → ...
 //         When work arrives: any → "returning" → "seated"
@@ -754,12 +758,24 @@ export function init() {
     }
   });
 
-  // Agent-click detection — dispatch custom event when clicking on an agent
+  // Click detection — room label collapse first, then agent click
   canvas.addEventListener("click", (e) => {
+    if (e.shiftKey) return; // shift+click is pan, skip
     const rect = canvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
-    const cx = (e.clientX - rect.left) * dpr;
-    const cy = (e.clientY - rect.top) * dpr;
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    // Check room label rects first (CSS pixels)
+    for (const [teamId, labelRect] of Object.entries(roomLabelRects)) {
+      if (mx >= labelRect.x && mx <= labelRect.x + labelRect.w &&
+          my >= labelRect.y && my <= labelRect.y + labelRect.h) {
+        toggleRoomCollapsed(teamId);
+        return;
+      }
+    }
+    // Agent click detection
+    const cx = mx * dpr;
+    const cy = my * dpr;
     for (const [name, pos] of Object.entries(agentPositions)) {
       if (cx >= pos.x && cx <= pos.x + pos.w && cy >= pos.y && cy <= pos.y + pos.h) {
         canvas.dispatchEvent(new CustomEvent("agent-click", { detail: { agentName: name } }));
@@ -1127,17 +1143,22 @@ function render() {
          + (roomRow - 1) * (maxRoomRows + ROOM_GAP) * s;   // subsequent rows
     }
 
-    drawRoom(rx, ry, teamId, dims.cols, dims.rows);
-    drawRoomLabel(rx, ry, team, teamId, dims.cols);
+    if (isRoomCollapsed(teamId)) {
+      // Draw compact badge instead of full room
+      drawCollapsedBadge(rx, ry, teamId, team);
+    } else {
+      drawRoom(rx, ry, teamId, dims.cols, dims.rows);
+      drawRoomLabel(rx, ry, team, teamId, dims.cols);
 
-    // Build drawables for z-sorting
-    const items = buildRoomLayout(team, teamId, dims.cols, dims.rows);
-    for (const item of items) {
-      const ix = rx + item.col * s;
-      const iy = ry + item.row * s;
-      // No z-bonus: natural Y-order means desk/monitor draw ON TOP of agent
-      const zY = iy;
-      drawables.push({ type: item.type, x: ix, y: iy, zY, teamId, agent: item.agent, roaming: item.roaming });
+      // Build drawables for z-sorting
+      const items = buildRoomLayout(team, teamId, dims.cols, dims.rows);
+      for (const item of items) {
+        const ix = rx + item.col * s;
+        const iy = ry + item.row * s;
+        // No z-bonus: natural Y-order means desk/monitor draw ON TOP of agent
+        const zY = iy;
+        drawables.push({ type: item.type, x: ix, y: iy, zY, teamId, agent: item.agent, roaming: item.roaming });
+      }
     }
   }
 
@@ -1238,6 +1259,7 @@ function drawRoom(rx, ry, teamId, roomCols, roomRows) {
 
 function drawRoomLabel(rx, ry, team, teamId, roomCols) {
   const s = TILE_SIZE * zoom;
+  const dpr = window.devicePixelRatio || 1;
   const style = TEAM_STYLES[teamId];
 
   // Count active agents in this team
@@ -1305,6 +1327,14 @@ function drawRoomLabel(rx, ry, team, teamId, roomCols) {
   ctx.fillText(team.role, cx, cy + nameSize * 0.8);
 
   ctx.restore();
+
+  // Record label pill hit rect for click-to-collapse (CSS pixels)
+  roomLabelRects[teamId] = {
+    x: (cx - rw / 2) / dpr,
+    y: (cy - rh / 2) / dpr,
+    w: rw / dpr,
+    h: rh / dpr,
+  };
 }
 
 // ---- Focus Mode Overlay ----
@@ -1365,6 +1395,80 @@ function drawFocusOverlay(focusedTeamId, offsetX, offsetY, s, orchOffset) {
   ctx.globalAlpha = 0.7;
   ctx.fillText("ESC or 0 to return to overview", w / 2, 8);
   ctx.restore();
+}
+
+// ---- Collapsed Room Badge ----
+
+function drawCollapsedBadge(rx, ry, teamId, team) {
+  const s = TILE_SIZE * zoom;
+  const dpr = window.devicePixelRatio || 1;
+  const style = TEAM_STYLES[teamId] || TEAM_STYLES.research;
+
+  // Badge: 3 tiles wide × 1 tile tall
+  const bw = 3 * s;
+  const bh = s;
+
+  // Background
+  ctx.save();
+  ctx.globalAlpha = 0.9;
+  ctx.fillStyle = "#0a0e17";
+  ctx.beginPath();
+  ctx.roundRect(rx, ry, bw, bh, s * 0.15);
+  ctx.fill();
+
+  // Accent border
+  ctx.strokeStyle = style.accent;
+  ctx.lineWidth = Math.max(1.5, zoom * 0.8);
+  ctx.globalAlpha = 0.8;
+  ctx.stroke();
+
+  // Team icon (first char of label)
+  const iconSize = Math.max(7, Math.round(s * 0.35));
+  ctx.font = `900 ${iconSize}px "FS Pixel Sans Unicode", monospace`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = style.accent;
+  ctx.fillText(team.icon || team.label[0], rx + s * 0.15, ry + bh / 2);
+
+  // Team name
+  const nameSize = Math.max(6, Math.round(s * 0.28));
+  ctx.font = `700 ${nameSize}px "JetBrains Mono", monospace`;
+  ctx.fillStyle = style.accent;
+  ctx.fillText(team.label.toUpperCase().slice(0, 6), rx + s * 0.45, ry + bh / 2);
+
+  // Agent count badge
+  const agentStates = team.agents.map(n => getAgent(n)).filter(Boolean);
+  const activeCount = agentStates.filter(a => a.status === "active").length;
+  const countText = `${activeCount}/${team.agents.length}`;
+  const countSize = Math.max(5, Math.round(s * 0.25));
+  ctx.font = `600 ${countSize}px "JetBrains Mono", monospace`;
+  ctx.textAlign = "right";
+  ctx.fillStyle = activeCount > 0 ? style.accent : "#475569";
+  ctx.fillText(countText, rx + bw - s * 0.35, ry + bh / 2);
+
+  // Pulsing dot if active
+  if (activeCount > 0) {
+    const dotR = Math.max(2, zoom * 0.7);
+    ctx.fillStyle = style.accent;
+    ctx.globalAlpha = 0.7 + 0.3 * Math.sin(tick * 0.12);
+    ctx.shadowColor = style.accent;
+    ctx.shadowBlur = 5;
+    ctx.beginPath();
+    ctx.arc(rx + bw - s * 0.15, ry + bh / 2, dotR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  ctx.restore();
+
+  // Store label rect for click detection (CSS pixels)
+  roomLabelRects[teamId] = {
+    x: rx / dpr,
+    y: ry / dpr,
+    w: bw / dpr,
+    h: bh / dpr,
+  };
 }
 
 // ---- Orchestrator Zone ----
