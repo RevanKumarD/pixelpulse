@@ -79,13 +79,13 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
 // ---- Layout Constants ----
 const ROOM_GAP = 3;          // tiles gap between rooms
 const SITTING_OFFSET = 12;
-const ORCH_ROWS = 3;         // orchestrator zone height in tiles
+const ORCH_ROWS = 2;         // orchestrator zone height in tiles (fits within gap)
 
 // Content padding (tiles on each side of the room grid)
-const PAD_TOP = 3;      // room labels above top rooms
-const PAD_BOTTOM = 4;   // agents/chairs below bottom rooms + orchestrator text
+const PAD_TOP = 2;      // room labels above top rooms
+const PAD_BOTTOM = 2;   // space below bottom rooms
 const PAD_LEFT = 1;
-const PAD_RIGHT = 5;    // agent name cards to the right
+const PAD_RIGHT = 2;    // agent name cards extend slightly beyond room edge
 
 // ---- Dynamic Layout Engine ----
 // Mutable layout state — recomputed by rebuildLayout()
@@ -115,10 +115,10 @@ function computeGrid(teamCount) {
  */
 function computeRoomSize(agentCount, mode) {
   if (mode === 'compact') return 9;  // fixed size, overflow agents as icons
-  if (agentCount <= 2) return 7;
-  if (agentCount <= 4) return 9;
-  if (agentCount <= 8) return 12;
-  return 14;
+  if (agentCount <= 2) return 9;
+  if (agentCount <= 4) return 12;
+  if (agentCount <= 8) return 14;
+  return 16;
 }
 
 /**
@@ -206,24 +206,24 @@ function rebuildLayout() {
 
 // Team colors for room walls/floors
 const TEAM_STYLES = {
-  research: { wall: "#0e4d64", floor1: "#0c1a2a", floor2: "#0f2236", accent: "#00d4ff" },
-  design:   { wall: "#4a1942", floor1: "#1a0c20", floor2: "#220f28", accent: "#ff6ec7" },
-  commerce: { wall: "#14432d", floor1: "#0c1a10", floor2: "#0f2214", accent: "#39ff14" },
-  learning: { wall: "#4a3510", floor1: "#1a1408", floor2: "#22190a", accent: "#ffae00" },
+  research: { wall: "#0e4d64", floor1: "#0d1e2e", floor2: "#16304a", accent: "#00d4ff" },
+  design:   { wall: "#4a1942", floor1: "#1c0e26", floor2: "#2e163e", accent: "#ff6ec7" },
+  commerce: { wall: "#14432d", floor1: "#0d1e11", floor2: "#17311d", accent: "#39ff14" },
+  learning: { wall: "#4a3510", floor1: "#1e1608", floor2: "#302513", accent: "#ffae00" },
 };
 
 // Color palette for dynamic team generation (teams not in TEAM_STYLES get a deterministic style)
 const DYNAMIC_COLORS = [
-  { wall: "#0e4d64", floor1: "#0c1a2a", floor2: "#0f2236", accent: "#00d4ff" },
-  { wall: "#4a1942", floor1: "#1a0c20", floor2: "#220f28", accent: "#ff6ec7" },
-  { wall: "#14432d", floor1: "#0c1a10", floor2: "#0f2214", accent: "#39ff14" },
-  { wall: "#4a3510", floor1: "#1a1408", floor2: "#22190a", accent: "#ffae00" },
-  { wall: "#2a1a4a", floor1: "#120c1a", floor2: "#180f22", accent: "#aa88ff" },
-  { wall: "#4a2a0e", floor1: "#1a120c", floor2: "#22180f", accent: "#ff8844" },
-  { wall: "#0e4a4a", floor1: "#0c1a1a", floor2: "#0f2222", accent: "#44ffdd" },
-  { wall: "#4a0e2a", floor1: "#1a0c12", floor2: "#220f18", accent: "#ff44aa" },
-  { wall: "#3a3a10", floor1: "#18180c", floor2: "#20200f", accent: "#dddd44" },
-  { wall: "#0e2a4a", floor1: "#0c121a", floor2: "#0f1822", accent: "#4488ff" },
+  { wall: "#0e4d64", floor1: "#0d1e2e", floor2: "#16304a", accent: "#00d4ff" },
+  { wall: "#4a1942", floor1: "#1c0e26", floor2: "#2e163e", accent: "#ff6ec7" },
+  { wall: "#14432d", floor1: "#0d1e11", floor2: "#17311d", accent: "#39ff14" },
+  { wall: "#4a3510", floor1: "#1e1608", floor2: "#302513", accent: "#ffae00" },
+  { wall: "#2a1a4a", floor1: "#14101e", floor2: "#211832", accent: "#aa88ff" },
+  { wall: "#4a2a0e", floor1: "#1e1408", floor2: "#301e0c", accent: "#ff8844" },
+  { wall: "#0e4a4a", floor1: "#0d1e1e", floor2: "#163030", accent: "#44ffdd" },
+  { wall: "#4a0e2a", floor1: "#1c0e18", floor2: "#2e1626", accent: "#ff44aa" },
+  { wall: "#3a3a10", floor1: "#1a1a08", floor2: "#28280e", accent: "#dddd44" },
+  { wall: "#0e2a4a", floor1: "#0d141e", floor2: "#162030", accent: "#4488ff" },
 ];
 
 /**
@@ -2387,8 +2387,8 @@ function drawAgent(x, y, agentName, teamId, roaming) {
 
   if (agent.status === "active" || agent.status === "waiting") {
     // ---- Active/Waiting: draw a mini status card to the right ----
-    const cardNameSize = Math.max(13, Math.round(zoom * 5));
-    const cardTaskSize = Math.max(11, Math.round(zoom * 4));
+    const cardNameSize = Math.max(10, Math.round(zoom * 5));
+    const cardTaskSize = Math.max(9, Math.round(zoom * 4));
     ctx.font = `700 ${cardNameSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
     const nameW = ctx.measureText(displayName).width;
 
@@ -2441,9 +2441,9 @@ function drawAgent(x, y, agentName, teamId, roaming) {
     ctx.shadowBlur = 0;
   } else {
     // ---- Idle/error: compact name label to the right (wraps if 2+ words) ----
-    const nameSize = Math.max(12, Math.round(zoom * 5));
+    const nameSize = Math.max(10, Math.round(zoom * 5));
     ctx.font = `600 ${nameSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
-    ctx.fillStyle = agent.status === "error" ? "#f85149" : "#94a3b8";
+    ctx.fillStyle = agent.status === "error" ? "#f85149" : "#e2e8f0";
     const words = displayName.split(" ");
     const maxLabelW = zoom * 28;
     let lines = [];
@@ -2502,8 +2502,8 @@ function drawAllBubbles() {
 }
 
 function drawWordWrappedBubble(x, y, text, type, alpha) {
-  const fontSize = Math.max(14, Math.round(zoom * 5));
-  const maxWidth = Math.max(160, zoom * 72);
+  const fontSize = Math.max(11, Math.round(zoom * 5));
+  const maxWidth = Math.max(120, zoom * 60);
   const lineHeight = fontSize * 1.3;
   const padding = zoom * 3;
 
