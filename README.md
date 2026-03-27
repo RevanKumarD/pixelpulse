@@ -8,9 +8,11 @@
 [![CI](https://github.com/RevanKumarD/pixelpulse/actions/workflows/ci.yml/badge.svg)](https://github.com/RevanKumarD/pixelpulse/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/tests-333%20passing-brightgreen.svg)](tests/)
 
-![PixelPulse Demo — agents roaming, messages flowing, pipeline progressing](tests/visual/demo.gif)
+![PixelPulse Demo — agents roaming, messages flowing, pipeline progressing](tests/visual/demo-preview.gif)
 
 > *Agents walk around their team rooms, show speech bubbles when active, and pass messages between rooms. No setup — just `pip install pixelpulse`.*
+
+**[Watch full demo videos](https://github.com/RevanKumarD/pixelpulse/releases/tag/demo-v1)** — 3 scenarios: Software Dev Team, Creative Agency, Data Science Lab
 
 ---
 
