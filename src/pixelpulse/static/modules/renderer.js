@@ -231,7 +231,7 @@ const DYNAMIC_COLORS = [
  * otherwise generates a deterministic style from the teamId hash and caches it.
  */
 function getTeamStyle(teamId) {
-  if (getTeamStyle(teamId)) return getTeamStyle(teamId);
+  if (TEAM_STYLES[teamId]) return TEAM_STYLES[teamId];
 
   // Generate deterministic style from team ID via djb2 hash
   let hash = 0;
@@ -243,7 +243,7 @@ function getTeamStyle(teamId) {
   const style = DYNAMIC_COLORS[idx];
 
   // Cache it so repeated calls are O(1)
-  getTeamStyle(teamId) = style;
+  TEAM_STYLES[teamId] = style;
   return style;
 }
 
