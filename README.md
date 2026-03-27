@@ -1,26 +1,28 @@
 # PixelPulse
 
-**Real-time observability dashboard for multi-agent AI systems — pixel-art meets production monitoring.**
+**Watch your AI agents work — pixel-art observability for multi-agent systems.**
 
 [![PyPI version](https://img.shields.io/pypi/v/pixelpulse.svg)](https://pypi.org/project/pixelpulse/)
 [![Python](https://img.shields.io/pypi/pyversions/pixelpulse.svg)](https://pypi.org/project/pixelpulse/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![CI](https://github.com/RevanKumarD/pixelpulse/actions/workflows/ci.yml/badge.svg)](https://github.com/RevanKumarD/pixelpulse/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-333%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-400%20passing-brightgreen.svg)](tests/)
 
 ![PixelPulse Demo — agents roaming, messages flowing, pipeline progressing](tests/visual/demo-preview.gif)
 
-> *Agents walk around their team rooms, show speech bubbles when active, and pass messages between rooms. No setup — just `pip install pixelpulse`.*
+> *Your agents walk around pixel-art office rooms, show speech bubbles when thinking, and pass glowing message particles between teams. One `pip install` and you're watching.*
 
 **[Watch full demo videos](https://github.com/RevanKumarD/pixelpulse/releases/tag/demo-v1)** — 3 scenarios: Software Dev Team, Creative Agency, Data Science Lab
 
 ---
 
-## The Problem
+## Why PixelPulse?
 
-You're running a multi-agent system. Something goes wrong. You have no idea which agent failed, what it was given, what it produced, or where the pipeline stalled. Your existing tools give you traces — but reading JSON logs while a live run is in progress is painful.
+You're running a multi-agent pipeline. Something stalls. Which agent failed? What was it thinking? Where did the handoff break?
 
-PixelPulse gives you a **live dashboard** where you can *watch* your agents work: see who's active, what they're thinking, how messages flow between them, and what it's costing you — in real time.
+Your options today: grep through JSON logs, wait for post-run traces in Langfuse/AgentOps, or stare at terminal output. None of these tell you what's happening *right now*.
+
+PixelPulse gives you a **live dashboard** — see who's active, read their reasoning in speech bubbles, watch messages fly between teams, and track costs per token — all in real time. It works with any Python agent framework, or none at all.
 
 ---
 
@@ -63,7 +65,64 @@ pp.cost_update("researcher", cost=0.003, tokens_in=1200, tokens_out=400)
 pp.agent_completed("researcher", output="Research complete")
 ```
 
-Open `http://localhost:8765` — your agents appear as pixel-art characters walking around their team rooms.
+Open `http://localhost:8765` — your agents appear as pixel-art characters in their team rooms.
+
+---
+
+## What You See
+
+![Agents at work — 4 teams, pipeline tracker, event log, cost counter](tests/visual/screenshots/02_demo_agents_active.png)
+
+<table>
+<tr>
+<td width="50%">
+
+**Pixel-art agents** — Animated characters that walk, work at desks, and roam their furnished office rooms with warm lighting and team-colored accents.
+
+**Speech bubbles** — Agent reasoning and messages appear as word-wrapped bubbles above each character as they think and communicate.
+
+**Message particles** — Glowing dots fly between agents across rooms when messages are sent, showing data flow in real time.
+
+**Pipeline tracker** — Central orchestrator bar shows which stage is active, with progress indicators for each pipeline phase.
+
+</td>
+<td width="50%">
+
+**Cost counter** — Live per-agent and total cost with token breakdown (input/output), updated as each LLM call completes.
+
+**Event log** — Timestamped, searchable, filterable log of all agent events with color-coded type badges.
+
+**Focus mode** — Double-click any room to zoom in and inspect individual agents. ESC to return.
+
+**Dark + Light themes** — Full theme toggle with pixel-art aesthetic in both modes.
+
+</td>
+</tr>
+</table>
+
+### Message Flow
+
+Agents communicate across rooms with glowing particles, speech bubbles, and a rich event log:
+
+![Message flow — particles between rooms, speech bubbles, event log](tests/visual/screenshots/19_manual_message_flow.png)
+
+### Focus Mode
+
+Double-click any room to zoom in. A minimap appears showing your position. Press ESC or 0 to return:
+
+![Focus mode — zoomed into Research Lab with minimap](tests/visual/screenshots/23_focus_room1_content.png)
+
+### Flow Connectors
+
+Press `F` to show dashed pipeline arrows between rooms, visualizing the data flow path:
+
+![Flow connectors — dashed arrows between rooms](tests/visual/screenshots/04_flow_connectors.png)
+
+### Light Theme
+
+Toggle between dark and light themes:
+
+![Light theme](tests/visual/screenshots/47_theme_light.png)
 
 ---
 
@@ -137,16 +196,25 @@ Any framework that exports OTEL GenAI spans works automatically:
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:8765 python my_agents.py
 ```
 
-Or POST directly:
+### Claude Code Plugin (Recommended)
 
-```python
-import httpx
-httpx.post("http://localhost:8765/v1/traces", content=serialized_proto)
+Install the PixelPulse plugin for automatic hook registration, MCP tools, and session analytics:
+
+```bash
+claude plugin add /path/to/pixelpulse/plugins/claude-code
 ```
 
-### Claude Code Hooks
+This gives you:
+- **Auto-registered hooks** — All 7 lifecycle events (SessionStart → SessionEnd) stream to the dashboard
+- **Auto-start server** — Dashboard launches on first SessionStart
+- **6 MCP tools** — `get_session_stats`, `get_cost_breakdown`, `get_subagent_tree`, `get_recent_tool_calls`, `get_active_agents`, `get_session_events`
+- **Session analyzer agent** — `/session-analyzer` for efficiency insights
 
-Add to your `.claude/settings.json`:
+See [plugins/claude-code/README.md](plugins/claude-code/README.md) for configuration.
+
+### Claude Code Hooks (Manual)
+
+Or add hooks manually to `.claude/settings.json`:
 
 ```json
 {
@@ -159,92 +227,7 @@ Add to your `.claude/settings.json`:
 
 ---
 
-## What You See
-
-| Feature | Description |
-|---------|-------------|
-| **Pixel-art agents** | Animated characters that walk, work at desks, and roam their rooms |
-| **Speech bubbles** | Agent reasoning and messages appear as word-wrapped bubbles |
-| **Message particles** | Glowing dots fly between agents when messages are sent |
-| **Pipeline tracker** | Central orchestrator bar shows which stage is active |
-| **Cost counter** | Live per-agent and total cost with token breakdown |
-| **Event log** | Timestamped, filterable log of all agent events |
-| **Focus mode** | Double-click any room to zoom in; ESC to return |
-| **Minimap** | Overview of all rooms with click-to-pan (5+ teams) |
-| **Dark + Light themes** | Full theme support |
-| **Room sizing modes** | Uniform, Adaptive (by agent count), or Compact |
-| **Collapsible rooms** | Click team label to collapse to a compact badge |
-
-### Live Demo
-
-The animation at the top shows a full pipeline cycle in demo mode. Individual states below:
-
-### Screenshots
-
-**Agents at work** — researcher, writer, reviewer moving through their pipeline stages:
-![Agents Active](tests/visual/screenshots/02_demo_agents_active.png)
-
-**Message flow** — particles flying between agents, speech bubbles, live event log:
-![Message Flow](tests/visual/screenshots/19_manual_message_flow.png)
-
-**Focus mode** — double-click a room to zoom in and inspect individual agents:
-![Focus Mode](tests/visual/screenshots/23_focus_room1_content.png)
-
-**Flow connectors** — press F to show dashed pipeline arrows between rooms:
-![Flow Connectors](tests/visual/screenshots/04_flow_connectors.png)
-
----
-
-## Setup by Platform
-
-### macOS / Linux
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install pixelpulse
-
-# With specific framework adapters:
-pip install "pixelpulse[langgraph]"   # LangGraph
-pip install "pixelpulse[otel]"        # OpenTelemetry
-```
-
-### Windows
-
-```powershell
-python -m venv .venv
-.venv\Scripts\activate
-pip install pixelpulse
-
-# PowerShell with LangGraph:
-pip install "pixelpulse[langgraph]"
-```
-
-### Docker
-
-```bash
-docker run -p 8765:8765 pixelpulse/pixelpulse
-```
-
-Or mount your agent script:
-
-```yaml
-# docker-compose.yml
-services:
-  pixelpulse:
-    image: pixelpulse/pixelpulse
-    ports:
-      - "8765:8765"
-    environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-    volumes:
-      - ./my_agents.py:/app/my_agents.py
-    command: python /app/my_agents.py
-```
-
----
-
-## Configuration Reference
+## Configuration
 
 ```python
 pp = PixelPulse(
@@ -270,16 +253,19 @@ pp.serve(port=8765, open_browser=True)  # start dashboard
 ### Event API
 
 ```python
+# Run lifecycle
 pp.run_started(run_id, name="Run name")
 pp.run_completed(run_id, status="completed", total_cost=0.01)
 pp.stage_entered(stage_name, run_id=run_id)
 pp.stage_exited(stage_name, run_id=run_id)
 
+# Agent events
 pp.agent_started(agent_id, task="What the agent is doing")
 pp.agent_thinking(agent_id, thought="Agent's internal reasoning")
 pp.agent_completed(agent_id, output="What the agent produced")
 pp.agent_error(agent_id, error="Error message")
 
+# Communication
 pp.agent_message(from_agent, to_agent, content="Message text", tag="data")
 pp.cost_update(agent_id, cost=0.005, tokens_in=1000, tokens_out=300, model="gpt-4o-mini")
 pp.artifact_created(agent_id, artifact_type="text", content="Output content")
@@ -298,6 +284,51 @@ POST /hooks/claude-code   → Claude Code hook endpoint
 
 ---
 
+## Setup by Platform
+
+### macOS / Linux
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install pixelpulse
+
+# With framework extras:
+pip install "pixelpulse[langgraph]"   # LangGraph
+pip install "pixelpulse[otel]"        # OpenTelemetry
+```
+
+### Windows
+
+```powershell
+python -m venv .venv
+.venv\Scripts\activate
+pip install pixelpulse
+```
+
+### Docker
+
+```bash
+docker run -p 8765:8765 pixelpulse/pixelpulse
+```
+
+Or with docker-compose:
+
+```yaml
+services:
+  pixelpulse:
+    image: pixelpulse/pixelpulse
+    ports:
+      - "8765:8765"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - ./my_agents.py:/app/my_agents.py
+    command: python /app/my_agents.py
+```
+
+---
+
 ## Keyboard Shortcuts
 
 | Key | Action |
@@ -312,17 +343,48 @@ POST /hooks/claude-code   → Claude Code hook endpoint
 
 ---
 
+## Dashboard Features
+
+| Feature | Details |
+|---------|---------|
+| **Room sizing** | Uniform, Adaptive (scales by agent count), or Compact layout modes |
+| **Collapsible rooms** | Click team label to collapse to a compact badge |
+| **Resizable panels** | Drag sidebar and bottom bar edges to resize |
+| **Settings panel** | Gear icon opens full settings: scanlines, font scale, connectors, room sizing |
+| **Screenshot export** | Camera button exports the canvas as PNG |
+| **Event export** | Download all events as JSON for offline analysis |
+| **Demo mode** | Built-in demo with speed control (1x-10x) to showcase features |
+
+---
+
+## Test Coverage
+
+400 tests across 5 layers:
+
+| Layer | Count | What it proves |
+|-------|-------|----------------|
+| Unit | 233 | Adapter logic, decorators, protocol, event bus in isolation |
+| E2E (graph-level) | 35 | Real LangGraph/OpenAI pipelines with mocked pp boundary |
+| Integration | 11 | `pp.agent_started()` → EventBus → `/api/events` wiring + plugin hook→event flow |
+| Functional | 52 | All 7 adapter paths → real pp → bus → HTTP, no mocks |
+| Plugin | 22 | Hook handler parsing, ensure_server, MCP aggregation functions |
+| Visual | 47 | Playwright screenshots across idle, active, focus, themes, stress |
+
+---
+
 ## Roadmap
 
-### v0.3 — Usability (current focus)
-- [ ] Agent click → detail panel with last input/output and full event history
-- [ ] Larger, readable fonts at all zoom levels (landed in this release)
-- [ ] Better screenshot quality for documentation
+### v0.3 — Usability (current)
+- [x] Agent click → detail panel with event history
+- [x] Readable fonts at all zoom levels
+- [x] Enhanced office visuals (lighting, furniture, carpets)
+- [x] Claude Code plugin with hooks, MCP server, and session analytics
+- [ ] Replay mode — scrub through a recorded run
 
 ### v0.4 — Depth
-- [ ] Replay mode — scrub through a recorded run
 - [ ] Persistent run history with SQLite backend
-- [ ] Structured output display (JSON/markdown rendered in detail panel)
+- [ ] Structured output display (JSON/markdown in detail panel)
+- [ ] Cost alerting thresholds
 
 ### v0.5 — Integrations
 - [ ] Langchain adapter
@@ -333,27 +395,6 @@ POST /hooks/claude-code   → Claude Code hook endpoint
 - [ ] VS Code extension (watch your Claude Code session live)
 - [ ] PyPI stable release with versioned API
 - [ ] Hosted cloud option (optional, privacy-first)
-
----
-
-## Test Coverage
-
-333 tests across 4 layers:
-
-| Layer | Count | What it proves |
-|-------|-------|----------------|
-| Unit | 233 | Adapter logic, decorators, protocol, event bus in isolation |
-| E2E (graph-level) | 35 | Real LangGraph/OpenAI pipelines with mocked pp boundary |
-| Integration | 8 | `pp.agent_started()` → EventBus → `/api/events` wiring |
-| Functional | 52 | All 7 adapter paths → real pp → bus → HTTP, no mocks |
-
----
-
-## Why PixelPulse?
-
-Production observability tools (AgentOps, Langfuse, Arize Phoenix) have great tracing but opaque dashboards that require post-run analysis. Pixel-art visualization tools are engaging but have no production utility.
-
-PixelPulse is the first tool that gives you both: **real observability during a live run**, in a format that's actually enjoyable to watch.
 
 ---
 
