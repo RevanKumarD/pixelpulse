@@ -1,4 +1,4 @@
-"""Async event bus for PixelPulse — based on PixelPulse's EventBus.
+"""Async event bus for PixelPulse.
 
 Provides a singleton bus that accepts events from any thread/context
 and broadcasts them to all async subscribers (primarily the WebSocket

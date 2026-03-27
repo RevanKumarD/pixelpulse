@@ -205,12 +205,12 @@ def _run_langgraph_pipeline(pp):
 
     def researcher(state: State) -> dict:
         """Simulate research with realistic timing."""
-        pp.agent_thinking("researcher", thought="Scanning market signals for trending topics...")
+        pp.agent_thinking("researcher", thought="Scanning market signals for eco-friendly products...")
         time.sleep(0.8)
-        pp.agent_thinking("researcher", thought="Found trend: Personalised wellness supplements (+340% search volume)")
+        pp.agent_thinking("researcher", thought="Found trend: Sustainable packaging (+340% search volume)")
         time.sleep(0.5)
         pp.cost_update("researcher", cost=0.0012, tokens_in=800, tokens_out=120, model="gpt-4o-mini")
-        result = "Top trend: Personalised supplements, wellness-first, global market"
+        result = "Top trend: Sustainable packaging, eco-first, global market"
         return {"messages": state["messages"] + [HumanMessage(content=f"Research: {result}")]}
 
     def writer(state: State) -> dict:
@@ -455,9 +455,9 @@ async def test_manual_events(page, port: int, pp):
 
         pp.agent_started("researcher", task="Scanning market signals for trending topics")
         time.sleep(1)
-        pp.agent_thinking("researcher", thought="Found 12 signals in wellness category")
+        pp.agent_thinking("researcher", thought="Found 12 signals in sustainability category")
         time.sleep(0.5)
-        pp.agent_thinking("researcher", thought="Top signal: personalised supplements (+340% search volume)")
+        pp.agent_thinking("researcher", thought="Top signal: eco-friendly packaging (+340% search volume)")
         time.sleep(0.5)
         pp.cost_update("researcher", cost=0.0023, tokens_in=850, tokens_out=120, model="gpt-4o-mini")
         pp.agent_completed("researcher", output="3 validated signals ready for briefing")
@@ -805,7 +805,7 @@ async def test_real_openai_api(page, port: int, pp):
 
     def agent_node(state: dict) -> dict:
         response = llm.invoke([
-            HumanMessage(content="In one sentence, what is a AI agent workflow business?")
+            HumanMessage(content="In one sentence, what is a multi-agent AI system?")
         ])
         pp.cost_update("agent-a", cost=0.0001, tokens_in=15, tokens_out=30, model="gpt-4o-mini")
         result_store.append(response.content)
@@ -956,9 +956,9 @@ async def main():
     # Create PixelPulse instance with a realistic multi-team config
     pp = PixelPulse(
         agents={
-            "data-collector": {"team": "research", "role": "Scans trend signals"},
-            "emotion-mapper": {"team": "research", "role": "Maps emotional triggers"},
-            "insight-builder": {"team": "research", "role": "Scores market niches"},
+            "data-collector": {"team": "research", "role": "Collects raw data"},
+            "data-analyzer": {"team": "research", "role": "Analyzes data patterns"},
+            "insight-builder": {"team": "research", "role": "Builds insights from data"},
             "researcher": {"team": "research", "role": "Deep research"},
             "brief-expander": {"team": "design", "role": "Expands concept briefs"},
             "image-generator": {"team": "design", "role": "Generates product images"},

@@ -3,7 +3,7 @@ uvicorn[standard]>=0.20.0
 websockets>=11.0
 
 [all]
-pixelpulse[autogen,crewai,langgraph,openai]
+pixelpulse[autogen,crewai,langgraph,openai,otel]
 
 [autogen]
 autogen-agentchat>=0.4.0
@@ -19,6 +19,11 @@ ruff>=0.4.0
 
 [langgraph]
 langgraph>=0.2.0
+langchain-core>=0.2.0
 
 [openai]
 openai-agents>=0.1.0
+
+[otel]
+opentelemetry-api>=1.20.0
+opentelemetry-sdk>=1.20.0

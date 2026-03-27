@@ -38,7 +38,7 @@ EVENT_TYPES: frozenset[str] = frozenset({
 })
 
 # ---- Dashboard-internal types (mapped from protocol types) ----
-# These match what the JS dashboard expects from the PixelPulse EventBus
+# These match what the JS dashboard expects
 
 DASHBOARD_TYPE_MAP: dict[str, str] = {
     AGENT_STARTED: "agent_status",
@@ -79,7 +79,7 @@ def create_event(
 def to_dashboard_event(event: dict) -> dict:
     """Convert a PixelPulse protocol event to the dashboard WebSocket format.
 
-    The JS dashboard expects events in the PixelPulse format::
+    The JS dashboard expects events in this format::
 
         {"type": "agent_status", "timestamp": "...", "payload": {...}}
 

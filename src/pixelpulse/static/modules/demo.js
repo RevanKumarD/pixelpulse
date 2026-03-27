@@ -7,7 +7,7 @@
  *
  * Dynamically generates the demo script from the loaded config
  * (TEAMS, PIPELINE_STAGES, STAGE_TO_TEAM) so it works with any
- * agent configuration — not just PixelPulse's hardcoded agents.
+ * agent configuration — works with any agent setup.
  *
  * Tick interval: 3500ms — one action per tick, not a flood.
  */
