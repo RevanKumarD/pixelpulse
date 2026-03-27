@@ -8,7 +8,9 @@
 [![CI](https://github.com/RevanKumarD/pixelpulse/actions/workflows/ci.yml/badge.svg)](https://github.com/RevanKumarD/pixelpulse/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/tests-333%20passing-brightgreen.svg)](tests/)
 
-![Dashboard Overview](tests/visual/screenshots/02_demo_agents_active.png)
+![PixelPulse Demo — agents roaming, messages flowing, pipeline progressing](tests/visual/demo.gif)
+
+> *Agents walk around their team rooms, show speech bubbles when active, and pass messages between rooms. No setup — just `pip install pixelpulse`.*
 
 ---
 
@@ -170,6 +172,10 @@ Add to your `.claude/settings.json`:
 | **Dark + Light themes** | Full theme support |
 | **Room sizing modes** | Uniform, Adaptive (by agent count), or Compact |
 | **Collapsible rooms** | Click team label to collapse to a compact badge |
+
+### Live Demo
+
+The animation at the top shows a full pipeline cycle in demo mode. Individual states below:
 
 ### Screenshots
 
