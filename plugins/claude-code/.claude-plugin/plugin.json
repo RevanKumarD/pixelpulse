@@ -1,0 +1,36 @@
+{
+  "name": "pixelpulse",
+  "version": "0.3.0",
+  "description": "Pixel-art observability dashboard — watch your Claude Code session live with animated agents, speech bubbles, cost tracking, and subagent visualization",
+  "author": {
+    "name": "RevanKumarD",
+    "url": "https://github.com/RevanKumarD"
+  },
+  "homepage": "https://github.com/RevanKumarD/pixelpulse",
+  "repository": "https://github.com/RevanKumarD/pixelpulse",
+  "license": "Apache-2.0",
+  "keywords": [
+    "observability",
+    "dashboard",
+    "pixel-art",
+    "monitoring",
+    "agents",
+    "subagents",
+    "cost-tracking",
+    "multi-agent"
+  ],
+  "userConfig": {
+    "port": {
+      "description": "Dashboard port (default: 8765)",
+      "sensitive": false
+    },
+    "auto_open_browser": {
+      "description": "Open dashboard in browser on session start (default: true)",
+      "sensitive": false
+    },
+    "auto_stop_server": {
+      "description": "Stop dashboard server when session ends (default: false)",
+      "sensitive": false
+    }
+  }
+}

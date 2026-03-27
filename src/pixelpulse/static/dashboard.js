@@ -5,7 +5,7 @@
 
 import { loadConfig } from "./modules/state.js";
 import { loadCharacterSprites } from "./modules/sprites.js";
-import { init as initRenderer, fitView, zoomIn, zoomOut, resetView, screenshot } from "./modules/renderer.js";
+import { init as initRenderer, fitView, zoomIn, zoomOut, resetView, togglePanMode, screenshot } from "./modules/renderer.js";
 import { connect } from "./modules/ws-client.js";
 import * as demo from "./modules/demo.js";
 import { getEvents } from "./modules/state.js";
@@ -113,10 +113,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   const ctrlZoomIn = document.getElementById("ctrl-zoom-in");
   const ctrlZoomOut = document.getElementById("ctrl-zoom-out");
   const ctrlReset = document.getElementById("ctrl-reset");
+  const ctrlPan = document.getElementById("ctrl-pan");
   if (ctrlFit) ctrlFit.addEventListener("click", fitView);
   if (ctrlZoomIn) ctrlZoomIn.addEventListener("click", zoomIn);
   if (ctrlZoomOut) ctrlZoomOut.addEventListener("click", zoomOut);
   if (ctrlReset) ctrlReset.addEventListener("click", resetView);
+  if (ctrlPan) ctrlPan.addEventListener("click", togglePanMode);
 
   // Bottom bar collapse toggle -- button lives outside bottom-bar, always visible
   const bottomCollapse = document.getElementById("bottom-collapse");
