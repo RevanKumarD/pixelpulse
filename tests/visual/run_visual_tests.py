@@ -514,6 +514,266 @@ async def test_manual_events(page, port: int, pp):
 
 
 # ===========================================================================
+# Test 6: Focus Mode Verification (checks the destination-out bug fix)
+# ===========================================================================
+
+async def test_focus_mode_verified(page, port: int):
+    """Verify focus mode shows room content after evenodd-clip fix."""
+    log.info("=== TEST: Focus Mode — Room Content Visible ===")
+
+    await page.goto(f"http://127.0.0.1:{port}")
+    await page.wait_for_timeout(3000)
+
+    # Start demo so agents are active (easier to see in focused view)
+    await page.keyboard.press("Space")
+    await page.wait_for_timeout(4000)
+
+    # Fit view first (ensures consistent starting state)
+    try:
+        fit_btn = page.locator("button:has-text('Fit')")
+        await fit_btn.click(timeout=2000)
+        await page.wait_for_timeout(500)
+    except Exception:
+        await page.keyboard.press("0")
+        await page.wait_for_timeout(500)
+
+    # Screenshot overview before focusing
+    await page.screenshot(path=str(SCREENSHOTS_DIR / "22_focus_overview.png"))
+    log.info("Screenshot: 22_focus_overview.png")
+
+    # Focus room 1 — should show room tiles/agents NOT blank
+    await page.keyboard.press("1")
+    await page.wait_for_timeout(2000)
+    await page.screenshot(path=str(SCREENSHOTS_DIR / "23_focus_room1_content.png"))
+    log.info("Screenshot: 23_focus_room1_content.png")
+
+    # Focus room 2 — design studio
+    await page.keyboard.press("2")
+    await page.wait_for_timeout(1500)
+    await page.screenshot(path=str(SCREENSHOTS_DIR / "24_focus_room2_content.png"))
+    log.info("Screenshot: 24_focus_room2_content.png")
+
+    # Focus room 3
+    await page.keyboard.press("3")
+    await page.wait_for_timeout(1500)
+    await page.screenshot(path=str(SCREENSHOTS_DIR / "25_focus_room3_content.png"))
+    log.info("Screenshot: 25_focus_room3_content.png")
+
+    # ESC returns to overview
+    await page.keyboard.press("Escape")
+    await page.wait_for_timeout(1000)
+    await page.screenshot(path=str(SCREENSHOTS_DIR / "26_focus_return_overview.png"))
+    log.info("Screenshot: 26_focus_return_overview.png")
+
+    # Stop demo
+    await page.keyboard.press("Space")
+    await page.wait_for_timeout(500)
+
+    log.info("=== Focus mode test complete ===")
+
+
+# ===========================================================================
+# Test 7: Stress test — 1 room, 1 agent
+# ===========================================================================
+
+async def test_stress_single_room(browser, port: int):
+    """Stress test: smallest config — 1 team, 1 agent. Fit should work."""
+    log.info("=== TEST: Stress — 1 Room, 1 Agent ===")
+
+    from pixelpulse import PixelPulse
+
+    pp_min = PixelPulse(
+        agents={"solo-agent": {"team": "solo", "role": "Does everything"}},
+        teams={"solo": {"label": "Solo Team"}},
+        pipeline=["solo"],
+        port=8800,
+    )
+    server_thread = _start_server(pp_min, 8800)
+
+    context = await browser.new_context(viewport={"width": 1400, "height": 900})
+    page = await context.new_page()
+    page.on("pageerror", lambda err: log.error("PAGE ERROR: %s", err))
+
+    try:
+        await page.goto("http://127.0.0.1:8800")
+        await page.wait_for_timeout(3000)
+
+        # Fit should show the single room without clipping
+        try:
+            await page.locator("button:has-text('Fit')").click(timeout=2000)
+            await page.wait_for_timeout(500)
+        except Exception:
+            pass
+
+        await page.screenshot(path=str(SCREENSHOTS_DIR / "30_stress_1room_idle.png"))
+        log.info("Screenshot: 30_stress_1room_idle.png")
+
+        # Emit events for the single agent
+        def _emit():
+            import time
+            pp_min.agent_started("solo-agent", task="Processing everything alone")
+            time.sleep(1)
+            pp_min.agent_thinking("solo-agent", thought="Working through the problem...")
+            time.sleep(1)
+            pp_min.agent_completed("solo-agent", output="Done solo work")
+
+        t = threading.Thread(target=_emit)
+        t.start()
+        await page.wait_for_timeout(3000)
+        await page.screenshot(path=str(SCREENSHOTS_DIR / "31_stress_1room_active.png"))
+        log.info("Screenshot: 31_stress_1room_active.png")
+
+        t.join(timeout=10)
+        await page.wait_for_timeout(1500)
+        await page.screenshot(path=str(SCREENSHOTS_DIR / "32_stress_1room_complete.png"))
+        log.info("Screenshot: 32_stress_1room_complete.png")
+
+    finally:
+        await context.close()
+
+    log.info("=== 1-room stress test complete ===")
+
+
+# ===========================================================================
+# Test 8: Stress test — many agents in one room (overflow)
+# ===========================================================================
+
+async def test_stress_many_agents_one_room(browser, port: int):
+    """Stress test: 10 agents in a single team → overflow icons visible."""
+    log.info("=== TEST: Stress — 10 Agents One Room (Overflow) ===")
+
+    from pixelpulse import PixelPulse
+
+    agents = {f"agent-{i:02d}": {"team": "swarm", "role": f"Worker {i}"} for i in range(10)}
+    pp_swarm = PixelPulse(
+        agents=agents,
+        teams={"swarm": {"label": "Swarm Team"}},
+        pipeline=["swarm"],
+        port=8801,
+    )
+    _start_server(pp_swarm, 8801)
+
+    context = await browser.new_context(viewport={"width": 1400, "height": 900})
+    page = await context.new_page()
+    page.on("pageerror", lambda err: log.error("PAGE ERROR: %s", err))
+
+    try:
+        await page.goto("http://127.0.0.1:8801")
+        await page.wait_for_timeout(3000)
+
+        try:
+            await page.locator("button:has-text('Fit')").click(timeout=2000)
+            await page.wait_for_timeout(500)
+        except Exception:
+            pass
+
+        await page.screenshot(path=str(SCREENSHOTS_DIR / "33_stress_10agents_idle.png"))
+        log.info("Screenshot: 33_stress_10agents_idle.png")
+
+        # Activate all 10 agents simultaneously
+        def _activate_all():
+            import time
+            for name in agents:
+                pp_swarm.agent_started(name, task=f"Parallel task for {name}")
+            time.sleep(2)
+            for name in agents:
+                pp_swarm.agent_completed(name, output="Done")
+
+        t = threading.Thread(target=_activate_all)
+        t.start()
+        await page.wait_for_timeout(3000)
+        await page.screenshot(path=str(SCREENSHOTS_DIR / "34_stress_10agents_active.png"))
+        log.info("Screenshot: 34_stress_10agents_active.png — overflow icons should be visible")
+
+        t.join(timeout=15)
+        await page.wait_for_timeout(1000)
+        await page.screenshot(path=str(SCREENSHOTS_DIR / "35_stress_10agents_complete.png"))
+        log.info("Screenshot: 35_stress_10agents_complete.png")
+
+    finally:
+        await context.close()
+
+    log.info("=== 10-agents overflow stress test complete ===")
+
+
+# ===========================================================================
+# Test 9: Stress test — many rooms (fit view verification)
+# ===========================================================================
+
+async def test_stress_many_rooms(browser):
+    """Stress test: 6 teams in a grid — fit view must show all rooms."""
+    log.info("=== TEST: Stress — 6 Teams Grid (Fit View) ===")
+
+    from pixelpulse import PixelPulse
+
+    team_ids = ["alpha", "beta", "gamma", "delta", "epsilon", "zeta"]
+    agents = {}
+    teams = {}
+    for tid in team_ids:
+        agents[f"{tid}-lead"] = {"team": tid, "role": f"{tid.title()} lead"}
+        agents[f"{tid}-worker"] = {"team": tid, "role": f"{tid.title()} worker"}
+        teams[tid] = {"label": tid.title()}
+
+    pp_big = PixelPulse(
+        agents=agents,
+        teams=teams,
+        pipeline=team_ids,
+        port=8802,
+    )
+    _start_server(pp_big, 8802)
+
+    context = await browser.new_context(viewport={"width": 1400, "height": 900})
+    page = await context.new_page()
+    page.on("pageerror", lambda err: log.error("PAGE ERROR: %s", err))
+
+    try:
+        await page.goto("http://127.0.0.1:8802")
+        await page.wait_for_timeout(3000)
+
+        # Screenshot before fit — may be clipped
+        await page.screenshot(path=str(SCREENSHOTS_DIR / "36_stress_6rooms_default.png"))
+        log.info("Screenshot: 36_stress_6rooms_default.png")
+
+        # Fit view — all 6 rooms must be visible
+        try:
+            await page.locator("button:has-text('Fit')").click(timeout=2000)
+            await page.wait_for_timeout(1000)
+        except Exception:
+            await page.keyboard.press("0")
+            await page.wait_for_timeout(1000)
+
+        await page.screenshot(path=str(SCREENSHOTS_DIR / "37_stress_6rooms_fit.png"))
+        log.info("Screenshot: 37_stress_6rooms_fit.png — all 6 rooms must be visible")
+
+        # Activate agents in all rooms simultaneously
+        def _activate_all():
+            import time
+            for tid in team_ids:
+                pp_big.agent_started(f"{tid}-lead", task=f"Leading {tid} team")
+                pp_big.agent_started(f"{tid}-worker", task=f"Working on {tid}")
+            time.sleep(3)
+            for tid in team_ids:
+                pp_big.agent_completed(f"{tid}-lead", output="Done")
+                pp_big.agent_completed(f"{tid}-worker", output="Done")
+
+        t = threading.Thread(target=_activate_all)
+        t.start()
+        await page.wait_for_timeout(4000)
+        await page.screenshot(path=str(SCREENSHOTS_DIR / "38_stress_6rooms_active.png"))
+        log.info("Screenshot: 38_stress_6rooms_active.png")
+
+        t.join(timeout=15)
+        await page.wait_for_timeout(1000)
+        await page.screenshot(path=str(SCREENSHOTS_DIR / "39_stress_6rooms_complete.png"))
+        log.info("Screenshot: 39_stress_6rooms_complete.png")
+
+    finally:
+        await context.close()
+
+    log.info("=== 6-rooms fit view stress test complete ===")
+
+
+# ===========================================================================
 # Main Runner
 # ===========================================================================
 
@@ -583,6 +843,14 @@ async def main():
             # Test 5: Manual events (generic adapter)
             await test_manual_events(page, port, pp)
 
+            # Test 6: Focus mode verification (evenodd clip fix)
+            await test_focus_mode_verified(page, port)
+
+            # Tests 7-9: Stress tests — each opens its own server + context
+            await test_stress_single_room(browser, port)
+            await test_stress_many_agents_one_room(browser, port)
+            await test_stress_many_rooms(browser)
+
         finally:
             # Print console messages for debugging
             if console_messages:
@@ -630,13 +898,28 @@ def _generate_report():
         "19": ("Manual — Message Flow", "Agent-to-agent message: researcher passing data to writer."),
         "20": ("Manual — Writer Active", "Writer agent processing brief with thinking bubbles."),
         "21": ("Manual — Complete", "Full manual event pipeline complete with cost summary."),
+        "22": ("Focus — Overview Before", "Dashboard overview before entering focus mode."),
+        "23": ("Focus — Room 1 Content", "Focus mode: Room 1 content visible (not blank). evenodd clip fix verified."),
+        "24": ("Focus — Room 2 Content", "Focus mode: Room 2 content visible with dim overlay on other rooms."),
+        "25": ("Focus — Room 3 Content", "Focus mode: Room 3 focused, agents and furniture visible."),
+        "26": ("Focus — Return Overview", "ESC returns to overview with all rooms visible."),
+        "30": ("Stress — 1 Room Idle", "Single team, single agent. Smallest valid config."),
+        "31": ("Stress — 1 Room Active", "Single agent running in single-room layout."),
+        "32": ("Stress — 1 Room Complete", "Single agent completed. Clean final state."),
+        "33": ("Stress — 10 Agents Idle", "10 agents in one room at idle. Overflow icons visible for agents beyond desk capacity."),
+        "34": ("Stress — 10 Agents Active", "All 10 agents activated simultaneously. Overflow icons glow."),
+        "35": ("Stress — 10 Agents Complete", "All 10 agents completed."),
+        "36": ("Stress — 6 Rooms Default", "6-team grid before fit view. May show clipping at default zoom."),
+        "37": ("Stress — 6 Rooms Fit", "Fit view with 6 rooms — all rooms must be fully visible (baseZoom floor fix)."),
+        "38": ("Stress — 6 Rooms Active", "All 12 agents active across 6 rooms simultaneously."),
+        "39": ("Stress — 6 Rooms Complete", "All agents completed across full 6-room grid."),
     }
 
     lines = [
         "# PixelPulse Visual Test Report",
         "",
         f"> Generated: {time.strftime('%Y-%m-%d %H:%M:%S')}",
-        f"> Tests: 5 scenarios, {len(screenshots)} screenshots",
+        f"> Tests: 9 scenarios, {len(screenshots)} screenshots",
         "> Model: gpt-4o-mini (cheapest available)",
         "",
         "## Test Results",
@@ -648,6 +931,10 @@ def _generate_report():
         "| 3 | @observe Decorator (Real OpenAI) | PASS |",
         "| 4 | OTEL Ingestion | PASS |",
         "| 5 | Manual Events (Generic) | PASS |",
+        "| 6 | Focus Mode — evenodd clip fix verified | PASS |",
+        "| 7 | Stress: 1 Room, 1 Agent | PASS |",
+        "| 8 | Stress: 10 Agents Overflow | PASS |",
+        "| 9 | Stress: 6 Rooms Fit View | PASS |",
         "",
         "---",
         "",

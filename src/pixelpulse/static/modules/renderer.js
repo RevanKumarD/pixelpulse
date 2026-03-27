@@ -995,7 +995,7 @@ function resize() {
   // Zoom so the full content area (including padding) fits the canvas exactly
   const zoomW = (w * dpr) / (CONTENT_TILES_W * TILE_SIZE);
   const zoomH = (h * dpr) / (CONTENT_TILES_H * TILE_SIZE);
-  baseZoom = Math.max(1, Math.min(zoomW, zoomH));
+  baseZoom = Math.max(0.25, Math.min(zoomW, zoomH));
   zoom = baseZoom * userZoom;
 }
 
@@ -1143,7 +1143,7 @@ export function zoomToRoom(teamId) {
   // Reset base zoom to fit and set userZoom for the target
   const zoomFitW = w / (CONTENT_TILES_W * TILE_SIZE * dpr);
   const zoomFitH = h / (CONTENT_TILES_H * TILE_SIZE * dpr);
-  baseZoom = Math.max(1, Math.min(zoomFitW, zoomFitH));
+  baseZoom = Math.max(0.25, Math.min(zoomFitW, zoomFitH));
   userZoom = Math.max(0.5, Math.min(targetZoom / baseZoom, 3));
   zoom = baseZoom * userZoom;
 
@@ -1630,14 +1630,6 @@ function drawFocusOverlay(focusedTeamId, offsetX, offsetY, s, orchOffset) {
   const w = canvas.width;
   const h = canvas.height;
 
-  // Dim entire canvas first
-  ctx.save();
-  ctx.globalAlpha = 0.75;
-  ctx.fillStyle = "#000000";
-  ctx.fillRect(0, 0, w, h);
-  ctx.restore();
-
-  // Punch out the focused room (clear the dim over it)
   const idx = layoutTeamOrder.indexOf(focusedTeamId);
   if (idx === -1) return;
   const roomCol = idx % gridCols;
@@ -1654,11 +1646,19 @@ function drawFocusOverlay(focusedTeamId, offsetX, offsetY, s, orchOffset) {
        + (roomRow - 1) * (maxRoomRows + ROOM_GAP) * s;
   }
 
-  ctx.save();
-  ctx.globalCompositeOperation = "destination-out";
-  ctx.globalAlpha = 0.75;
   const pad = s * 0.5;
-  ctx.fillRect(rx - pad, ry - pad, dims.cols * s + pad * 2, dims.rows * s + pad * 2);
+
+  // Dim everything EXCEPT the focused room using an evenodd clip.
+  // destination-out would erase room pixels from the canvas buffer —
+  // evenodd clip leaves the room untouched while dimming everything else.
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 0, w, h);
+  ctx.rect(rx - pad, ry - pad, dims.cols * s + pad * 2, dims.rows * s + pad * 2);
+  ctx.clip("evenodd");
+  ctx.globalAlpha = 0.75;
+  ctx.fillStyle = "#000000";
+  ctx.fillRect(0, 0, w, h);
   ctx.restore();
 
   // Accent border around focused room
