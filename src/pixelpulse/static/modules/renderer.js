@@ -29,6 +29,10 @@ import {
   getOrchestrator,
   expireBubbles,
   tickParticles,
+  getFocusedRoom,
+  setFocusedRoom,
+  isRoomCollapsed,
+  toggleRoomCollapsed,
 } from "./state.js";
 import {
   TILE_SIZE,
@@ -735,8 +739,20 @@ export function init() {
   });
   window.addEventListener("mouseup", () => { isPanning = false; });
 
-  // Double-click to fit view
-  canvas.addEventListener("dblclick", () => { fitView(); });
+  // Double-click: focus on room under cursor, or fit view if outside rooms or already focused
+  canvas.addEventListener("dblclick", (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const cx = (e.clientX - rect.left) * dpr;
+    const cy = (e.clientY - rect.top) * dpr;
+    const hitTeam = hitTestRoom(cx, cy);
+    if (hitTeam && getFocusedRoom() !== hitTeam) {
+      zoomToRoom(hitTeam);
+    } else {
+      setFocusedRoom(null);
+      fitView();
+    }
+  });
 
   // Agent-click detection — dispatch custom event when clicking on an agent
   canvas.addEventListener("click", (e) => {
@@ -866,6 +882,117 @@ export function panToTeam(teamId) {
 
   userZoom = 1.5;
   zoom = baseZoom * userZoom;
+  panX = (w / 2 - roomCenterX) / dpr;
+  panY = (h / 2 - roomCenterY) / dpr;
+}
+
+/**
+ * Compute the screen-space rectangle for a given team room.
+ * Returns { rx, ry, rw, rh } in canvas pixels, or null if not found.
+ */
+function getRoomScreenRect(teamId) {
+  const idx = layoutTeamOrder.indexOf(teamId);
+  if (idx === -1) return null;
+  const roomCol = idx % gridCols;
+  const roomRow = Math.floor(idx / gridCols);
+  const dims = roomDims[teamId] || { cols: 9, rows: 9 };
+  const s = TILE_SIZE * zoom;
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.width;
+  const h = canvas.height;
+  const contentW = CONTENT_TILES_W * s;
+  const contentH = CONTENT_TILES_H * s;
+  const contentOffsetX = Math.floor((w - contentW) / 2) + panX * dpr;
+  const contentOffsetY = Math.floor((h - contentH) / 2) + panY * dpr;
+  const offsetX = contentOffsetX + PAD_LEFT * s;
+  const offsetY = contentOffsetY + PAD_TOP * s;
+  const orchOffset = (getSetting('orchestratorVisible') !== false && gridRows > 1)
+    ? (ORCH_ROWS + 1) : 0;
+  const rx = offsetX + roomCol * (maxRoomCols + ROOM_GAP) * s;
+  let ry;
+  if (roomRow === 0) {
+    ry = offsetY;
+  } else {
+    ry = offsetY + maxRoomRows * s
+       + orchOffset * s
+       + (roomRow - 1) * (maxRoomRows + ROOM_GAP) * s;
+  }
+  return { rx, ry, rw: dims.cols * s, rh: dims.rows * s };
+}
+
+/**
+ * Hit-test a canvas-space point against all room rects.
+ * Returns the teamId of the room under the point, or null.
+ * Point (cx, cy) must be in canvas pixels (DPR-scaled).
+ */
+function hitTestRoom(cx, cy) {
+  for (const teamId of layoutTeamOrder) {
+    const rect = getRoomScreenRect(teamId);
+    if (!rect) continue;
+    if (cx >= rect.rx && cx <= rect.rx + rect.rw &&
+        cy >= rect.ry && cy <= rect.ry + rect.rh) {
+      return teamId;
+    }
+  }
+  return null;
+}
+
+/**
+ * Zoom in on a specific room, filling the viewport with it.
+ * Sets focusedRoom state so render() draws the dim overlay.
+ */
+export function zoomToRoom(teamId) {
+  if (!teamId || !layoutTeamOrder.includes(teamId)) return;
+  setFocusedRoom(teamId);
+
+  const idx = layoutTeamOrder.indexOf(teamId);
+  const roomCol = idx % gridCols;
+  const roomRow = Math.floor(idx / gridCols);
+  const dims = roomDims[teamId] || { cols: 9, rows: 9 };
+
+  // First fit view so we have a consistent base zoom
+  const wrap = document.querySelector(".canvas-wrap");
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.width;
+  const h = canvas.height;
+
+  // Compute zoom so the room fills ~80% of the viewport
+  const roomPixW = dims.cols * TILE_SIZE;
+  const roomPixH = dims.rows * TILE_SIZE;
+  const marginX = 0.80, marginY = 0.80;
+  const zoomW = (w * marginX) / (roomPixW * dpr);
+  const zoomH = (h * marginY) / (roomPixH * dpr);
+  const targetZoom = Math.min(zoomW, zoomH);
+
+  // Reset base zoom to fit and set userZoom for the target
+  const zoomFitW = w / (CONTENT_TILES_W * TILE_SIZE * dpr);
+  const zoomFitH = h / (CONTENT_TILES_H * TILE_SIZE * dpr);
+  baseZoom = Math.max(1, Math.min(zoomFitW, zoomFitH));
+  userZoom = Math.max(0.5, Math.min(targetZoom / baseZoom, 3));
+  zoom = baseZoom * userZoom;
+
+  // Pan so the room is centered
+  const s = TILE_SIZE * zoom;
+  const contentW = CONTENT_TILES_W * s;
+  const contentH = CONTENT_TILES_H * s;
+  const contentOffsetX = (w - contentW) / 2;
+  const contentOffsetY = (h - contentH) / 2;
+  const offsetX = contentOffsetX + PAD_LEFT * s;
+  const offsetY = contentOffsetY + PAD_TOP * s;
+  const orchOffset = (getSetting('orchestratorVisible') !== false && gridRows > 1)
+    ? (ORCH_ROWS + 1) : 0;
+  const rx = offsetX + roomCol * (maxRoomCols + ROOM_GAP) * s;
+  let ry;
+  if (roomRow === 0) {
+    ry = offsetY;
+  } else {
+    ry = offsetY + maxRoomRows * s
+       + orchOffset * s
+       + (roomRow - 1) * (maxRoomRows + ROOM_GAP) * s;
+  }
+  const roomCenterX = rx + (dims.cols * s) / 2;
+  const roomCenterY = ry + (dims.rows * s) / 2;
+
   panX = (w / 2 - roomCenterX) / dpr;
   panY = (h / 2 - roomCenterY) / dpr;
 }
@@ -1035,6 +1162,12 @@ function render() {
     }
   }
 
+  // ---- Focus mode dim overlay ----
+  const focusedTeam = getFocusedRoom();
+  if (focusedTeam) {
+    drawFocusOverlay(focusedTeam, offsetX, offsetY, s, orchOffset);
+  }
+
   // ---- Draw particles ----
   drawParticles();
 
@@ -1051,7 +1184,7 @@ function render() {
     ctx.fillStyle = "#475569";
     ctx.textAlign = "left";
     ctx.textBaseline = "bottom";
-    ctx.fillText(`${Math.round(userZoom * 100)}% · dbl-click to fit`, 12, h - 8);
+    ctx.fillText(`${Math.round(userZoom * 100)}% · dbl-click room to focus · 0/ESC to fit`, 12, h - 8);
     ctx.restore();
   } else {
     ctx.save();
@@ -1059,7 +1192,7 @@ function render() {
     ctx.fillStyle = "#334155";
     ctx.textAlign = "left";
     ctx.textBaseline = "bottom";
-    ctx.fillText("scroll to zoom · shift-drag to pan · dbl-click to fit", 12, h - 8);
+    ctx.fillText("scroll to zoom · shift-drag to pan · dbl-click room to focus", 12, h - 8);
     ctx.restore();
   }
 }
@@ -1171,6 +1304,66 @@ function drawRoomLabel(rx, ry, team, teamId, roomCols) {
   ctx.globalAlpha = 0.8;
   ctx.fillText(team.role, cx, cy + nameSize * 0.8);
 
+  ctx.restore();
+}
+
+// ---- Focus Mode Overlay ----
+
+function drawFocusOverlay(focusedTeamId, offsetX, offsetY, s, orchOffset) {
+  const w = canvas.width;
+  const h = canvas.height;
+
+  // Dim entire canvas first
+  ctx.save();
+  ctx.globalAlpha = 0.75;
+  ctx.fillStyle = "#000000";
+  ctx.fillRect(0, 0, w, h);
+  ctx.restore();
+
+  // Punch out the focused room (clear the dim over it)
+  const idx = layoutTeamOrder.indexOf(focusedTeamId);
+  if (idx === -1) return;
+  const roomCol = idx % gridCols;
+  const roomRow = Math.floor(idx / gridCols);
+  const dims = roomDims[focusedTeamId] || { cols: 9, rows: 9 };
+
+  const rx = offsetX + roomCol * (maxRoomCols + ROOM_GAP) * s;
+  let ry;
+  if (roomRow === 0) {
+    ry = offsetY;
+  } else {
+    ry = offsetY + maxRoomRows * s
+       + orchOffset * s
+       + (roomRow - 1) * (maxRoomRows + ROOM_GAP) * s;
+  }
+
+  ctx.save();
+  ctx.globalCompositeOperation = "destination-out";
+  ctx.globalAlpha = 0.75;
+  const pad = s * 0.5;
+  ctx.fillRect(rx - pad, ry - pad, dims.cols * s + pad * 2, dims.rows * s + pad * 2);
+  ctx.restore();
+
+  // Accent border around focused room
+  const style = TEAM_STYLES[focusedTeamId] || TEAM_STYLES.research;
+  ctx.save();
+  ctx.strokeStyle = style.accent;
+  ctx.lineWidth = Math.max(2, zoom * 1.5);
+  ctx.globalAlpha = 0.8 + 0.2 * Math.sin(tick * 0.07);
+  ctx.shadowColor = style.accent;
+  ctx.shadowBlur = 12;
+  ctx.strokeRect(rx - pad * 0.5, ry - pad * 0.5, dims.cols * s + pad, dims.rows * s + pad);
+  ctx.restore();
+
+  // Hint text: "ESC or 0 to return"
+  ctx.save();
+  const hintSize = Math.max(8, Math.round(zoom * 3.5));
+  ctx.font = `${hintSize}px "JetBrains Mono", monospace`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  ctx.fillStyle = "#94a3b8";
+  ctx.globalAlpha = 0.7;
+  ctx.fillText("ESC or 0 to return to overview", w / 2, 8);
   ctx.restore();
 }
 

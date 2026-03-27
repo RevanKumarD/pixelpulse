@@ -5,13 +5,13 @@
  * form elements or when a <dialog> is open (except Esc).
  */
 import * as Settings from "./settings.js";
-import { fitView } from "./renderer.js";
+import { fitView, zoomToRoom } from "./renderer.js";
+import { TEAMS, getFocusedRoom, setFocusedRoom } from "./state.js";
 import * as demo from "./demo.js";
 
-const TEAM_IDS = ["research", "design", "commerce", "learning"];
 let helpDialog;
 
-// panToTeam is added to renderer.js in Task 8 — import dynamically to avoid
+// panToTeam is added to renderer.js — import dynamically to avoid
 // breaking if this module loads before the renderer export exists.
 let _panToTeam = null;
 import("./renderer.js").then((mod) => {
@@ -40,6 +40,14 @@ function _onKeyDown(e) {
   if (document.querySelector("dialog[open]") && e.key !== "Escape") return;
 
   switch (e.key) {
+    case "Escape":
+      // Exit focus mode if active (don't preventDefault so dialogs still close)
+      if (getFocusedRoom()) {
+        setFocusedRoom(null);
+        fitView();
+      }
+      break;
+
     case " ":
       e.preventDefault();
       if (demo.isRunning()) {
@@ -59,8 +67,9 @@ function _onKeyDown(e) {
 
     case "f":
     case "F":
+      // F toggles flow connectors
       e.preventDefault();
-      fitView();
+      Settings.set("showConnectors", !Settings.get("showConnectors"));
       break;
 
     case "+":
@@ -74,13 +83,29 @@ function _onKeyDown(e) {
       Settings.set("zoomLevel", Math.max(Settings.get("zoomLevel") - 0.25, 0.5));
       break;
 
+    case "0": {
+      // Return to overview
+      e.preventDefault();
+      setFocusedRoom(null);
+      fitView();
+      break;
+    }
+
     case "1":
     case "2":
     case "3":
-    case "4": {
+    case "4":
+    case "5":
+    case "6":
+    case "7":
+    case "8":
+    case "9": {
       e.preventDefault();
       const idx = parseInt(e.key) - 1;
-      if (_panToTeam) _panToTeam(TEAM_IDS[idx]);
+      const teamIds = Object.keys(TEAMS);
+      if (idx < teamIds.length) {
+        zoomToRoom(teamIds[idx]);
+      }
       break;
     }
 
