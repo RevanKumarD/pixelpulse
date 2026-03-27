@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from pixelpulse.core import PixelPulse
@@ -342,18 +342,24 @@ class CrewAIAdapter:
         try:
             # Try current import path first, then legacy
             try:
+                from crewai.events import (
+                    AgentExecutionCompletedEvent as AgentExecutionCompleted,
+                )
                 from crewai.events import (  # type: ignore[import-untyped]
                     AgentExecutionStartedEvent as AgentExecutionStarted,
-                    AgentExecutionCompletedEvent as AgentExecutionCompleted,
-                    ToolUsageStartedEvent as ToolUsageStarted,
+                )
+                from crewai.events import (
                     ToolUsageFinishedEvent as ToolUsageFinished,
+                )
+                from crewai.events import (
+                    ToolUsageStartedEvent as ToolUsageStarted,
                 )
             except ImportError:
                 from crewai.utilities.events.event_types import (  # type: ignore[import-untyped]
-                    AgentExecutionStarted,
                     AgentExecutionCompleted,
-                    ToolUsageStarted,
+                    AgentExecutionStarted,
                     ToolUsageFinished,
+                    ToolUsageStarted,
                 )
 
             @crewai_event_bus.on(AgentExecutionStarted)

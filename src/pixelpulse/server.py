@@ -8,18 +8,16 @@ The server provides:
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING
-
-from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from pixelpulse.bus import EventBus, get_event_bus, set_main_loop
+from pixelpulse.bus import get_event_bus, set_main_loop
 from pixelpulse.otel import parse_otlp_spans, span_to_events
 from pixelpulse.protocol import to_dashboard_event
 
@@ -100,7 +98,10 @@ def create_app(
         return JSONResponse({
             "title": title,
             "teams": teams_data,
-            "agents": {name: {"role": ac.role, "team": ac.team, "sprite": ac.sprite} for name, ac in agents.items()},
+            "agents": {
+                name: {"role": ac.role, "team": ac.team, "sprite": ac.sprite}
+                for name, ac in agents.items()
+            },
             "agent_roles": agent_roles,
             "pipeline_stages": pipeline_stages or [],
             "stage_to_team": stage_to_team,

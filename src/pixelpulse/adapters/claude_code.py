@@ -20,7 +20,7 @@ import json
 import logging
 import time
 from pathlib import Path
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from pixelpulse.core import PixelPulse
@@ -214,7 +214,6 @@ class ClaudeCodeAdapter:
         self._tool_start_times[tool_id] = time.monotonic()
 
         # Emit thinking event with tool info
-        category = _TOOL_CATEGORIES.get(tool_name, "tool")
         input_preview = ""
         if isinstance(tool_input, dict):
             # Show relevant field based on tool type
@@ -232,7 +231,9 @@ class ClaudeCodeAdapter:
                 input_preview = json.dumps(tool_input)[:150]
 
         display_name = _sanitize_tool_name(tool_name)
-        thought = f"Using {display_name}: {input_preview}" if input_preview else f"Using {display_name}"
+        thought = (
+            f"Using {display_name}: {input_preview}" if input_preview else f"Using {display_name}"
+        )
         self._pp.agent_thinking(self._agent_name, thought=thought)
 
     def _on_post_tool_use(self, event: dict[str, Any]) -> None:
@@ -242,10 +243,8 @@ class ClaudeCodeAdapter:
 
         # Compute duration
         tool_id = f"{tool_name}-{self._tool_count - 1}"
-        duration_ms = 0
         start = self._tool_start_times.pop(tool_id, None)
-        if start:
-            duration_ms = int((time.monotonic() - start) * 1000)
+        _ = int((time.monotonic() - start) * 1000) if start else 0
 
         # Emit artifact for meaningful tool results
         category = _TOOL_CATEGORIES.get(tool_name, "tool")
@@ -310,7 +309,10 @@ class ClaudeCodeAdapter:
         if self._current_run_id:
             self._pp.agent_completed(
                 self._agent_name,
-                output=f"Session complete ({self._tool_count} tool calls, ${self._accumulated_cost:.4f})",
+                output=(
+                    f"Session complete ({self._tool_count} tool calls,"
+                    f" ${self._accumulated_cost:.4f})"
+                ),
             )
             self._pp.run_completed(
                 self._current_run_id,
@@ -436,8 +438,6 @@ class ClaudeCodeAdapter:
     def _replay_entry(self, entry: dict[str, Any]) -> None:
         """Process a single transcript entry during replay."""
         role = entry.get("role", "")
-        entry_type = entry.get("type", "")
-
         if role == "assistant":
             # Assistant message — may contain tool_use blocks
             content = entry.get("content", [])
@@ -482,7 +482,6 @@ class ClaudeCodeAdapter:
         elif role == "tool":
             # Tool result
             content = entry.get("content", "")
-            tool_id = entry.get("tool_use_id", "")
             if content:
                 content_str = str(content)[:300] if not isinstance(content, str) else content[:300]
                 self._pp.artifact_created(

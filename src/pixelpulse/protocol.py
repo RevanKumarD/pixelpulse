@@ -128,7 +128,9 @@ def to_dashboard_event(event: dict) -> dict:
     elif event_type == RUN_STARTED:
         dashboard_payload["stage"] = "started"
         dashboard_payload["status"] = "active"
-        dashboard_payload["message"] = f"Run started: {payload.get('name', payload.get('run_id', ''))}"
+        dashboard_payload["message"] = (
+            f"Run started: {payload.get('name', payload.get('run_id', ''))}"
+        )
     elif event_type == RUN_COMPLETED:
         dashboard_payload["stage"] = "completed"
         dashboard_payload["status"] = payload.get("status", "completed")

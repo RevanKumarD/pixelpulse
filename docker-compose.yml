@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  pixelpulse:
+    build: .
+    ports:
+      - "8765:8765"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+    volumes:
+      # Mount your agent script here
+      - ./examples:/app/examples:ro
+    # Override this to run your own script:
+    # command: python /app/examples/basic.py

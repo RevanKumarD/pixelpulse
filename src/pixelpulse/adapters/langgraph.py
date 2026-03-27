@@ -19,7 +19,7 @@ from __future__ import annotations
 import logging
 import time
 import uuid
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from pixelpulse.core import PixelPulse
@@ -32,7 +32,9 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 try:
-    from langchain_core.callbacks import BaseCallbackHandler as _Base  # type: ignore[import-untyped]
+    from langchain_core.callbacks import (
+        BaseCallbackHandler as _Base,  # type: ignore[import-untyped]
+    )
 except ImportError:
     _Base = object  # type: ignore[assignment,misc]
 
@@ -526,7 +528,9 @@ class LangGraphAdapter:
         config["callbacks"] = existing
         return config
 
-    def _patched_invoke(self, inputs: Any, config: dict[str, Any] | None = None, **kwargs: Any) -> Any:
+    def _patched_invoke(
+        self, inputs: Any, config: dict[str, Any] | None = None, **kwargs: Any
+    ) -> Any:
         """Wraps the compiled graph's ``invoke`` to inject callbacks."""
         config = self._inject_callbacks(config)
         run_id = str(uuid.uuid4())
@@ -535,11 +539,13 @@ class LangGraphAdapter:
             result = self._original_invoke(inputs, config=config, **kwargs)
             self._pp.run_completed(run_id, status="completed")
             return result
-        except Exception as exc:
+        except Exception:
             self._pp.run_completed(run_id, status="failed")
             raise
 
-    async def _patched_ainvoke(self, inputs: Any, config: dict[str, Any] | None = None, **kwargs: Any) -> Any:
+    async def _patched_ainvoke(
+        self, inputs: Any, config: dict[str, Any] | None = None, **kwargs: Any
+    ) -> Any:
         """Wraps the compiled graph's ``ainvoke`` to inject callbacks."""
         config = self._inject_callbacks(config)
         run_id = str(uuid.uuid4())
@@ -548,6 +554,6 @@ class LangGraphAdapter:
             result = await self._original_ainvoke(inputs, config=config, **kwargs)
             self._pp.run_completed(run_id, status="completed")
             return result
-        except Exception as exc:
+        except Exception:
             self._pp.run_completed(run_id, status="failed")
             raise

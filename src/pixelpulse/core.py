@@ -8,14 +8,13 @@ from __future__ import annotations
 import logging
 import threading
 import webbrowser
-from typing import Any, TYPE_CHECKING
+from typing import Any
 
 import uvicorn
 
-from pixelpulse.bus import emit_sync, get_event_bus, set_main_loop
+from pixelpulse.bus import emit_sync, get_event_bus
 from pixelpulse.config import (
     AgentConfig,
-    PipelineConfig,
     TeamConfig,
     normalize_agents,
     normalize_teams,
@@ -235,7 +234,9 @@ class PixelPulse:
         """Signal the start of a pipeline run."""
         self._emit(RUN_STARTED, {"run_id": run_id, "name": name, **kw})
 
-    def run_completed(self, run_id: str, status: str = "completed", total_cost: float = 0, **kw: Any) -> None:
+    def run_completed(
+        self, run_id: str, status: str = "completed", total_cost: float = 0, **kw: Any
+    ) -> None:
         """Signal the completion of a pipeline run."""
         self._emit(RUN_COMPLETED, {
             "run_id": run_id, "status": status, "total_cost": total_cost, **kw

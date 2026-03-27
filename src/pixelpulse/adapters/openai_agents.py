@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from pixelpulse.core import PixelPulse
@@ -199,7 +199,7 @@ class _PixelPulseTracingProcessor:
     def on_span_end(self, span: Any) -> None:
         """Called when a span completes — extract results and emit events."""
         span_id = getattr(span, "span_id", "") or ""
-        start_time = self._span_start_times.pop(span_id, None)
+        self._span_start_times.pop(span_id, None)
 
         span_data = getattr(span, "span_data", None)
         if span_data is None:

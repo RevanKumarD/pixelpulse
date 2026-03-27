@@ -2,6 +2,12 @@
 
 Real-time pixel-art dashboard for multi-agent systems. Production observability meets engaging visualization.
 
+[![PyPI version](https://img.shields.io/pypi/v/pixelpulse.svg)](https://pypi.org/project/pixelpulse/)
+[![Python](https://img.shields.io/pypi/pyversions/pixelpulse.svg)](https://pypi.org/project/pixelpulse/)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![CI](https://github.com/revan-ar/pixelpulse/actions/workflows/ci.yml/badge.svg)](https://github.com/revan-ar/pixelpulse/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-306%20passing-brightgreen.svg)](tests/)
+
 ![Dashboard Overview](tests/visual/screenshots/01_dashboard_idle.png)
 
 ```
@@ -33,6 +39,26 @@ pp.agent_started("researcher", task="Searching for trends")
 pp.agent_message("researcher", "writer", content="Found 5 trends", tag="data")
 pp.agent_completed("researcher", output="Full research output here")
 pp.cost_update("researcher", cost=0.003, tokens_in=1200, tokens_out=400)
+```
+
+## Docker
+
+```bash
+docker run -p 8765:8765 pixelpulse/pixelpulse
+```
+
+Or with Docker Compose (for your own agent script):
+
+```yaml
+# docker-compose.yml
+services:
+  pixelpulse:
+    image: pixelpulse/pixelpulse
+    ports:
+      - "8765:8765"
+    volumes:
+      - ./my_agents.py:/app/my_agents.py
+    command: python /app/my_agents.py
 ```
 
 ## Framework Adapters
@@ -177,13 +203,17 @@ The dashboard automatically adapts to any number of teams and agents:
 
 ## Test Coverage
 
-273 tests covering:
-- Adapter unit tests (LangGraph, OpenAI Agents, CrewAI, AutoGen, Claude Code, OTEL)
-- E2E pipeline tests (real LangGraph StateGraph, OpenAI tracing protocol)
-- @observe() decorator (sync, async, nested context, error handling)
-- auto_instrument() detection
-- Event protocol, lifecycle, server endpoints
-- Dynamic canvas rendering
+306 tests across 4 layers:
+
+| Layer | Count | What it proves |
+|-------|-------|----------------|
+| Unit | 233 | Adapter logic, decorators, protocol, event bus in isolation |
+| E2E (graph-level) | 35 | Real LangGraph/OpenAI pipelines with mocked pp boundary |
+| Integration | 8 | `pp.agent_started()` → EventBus singleton → `/api/events` wiring |
+| Functional | 25 | All 4 adapter paths → real pp → bus → HTTP endpoint, no mocks |
+
+The integration + functional tests are the critical layer: they're the only ones that prove
+`emit_sync()` correctly lands events in `/api/events` in a real async context.
 
 ## Why PixelPulse?
 

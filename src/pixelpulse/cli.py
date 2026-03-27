@@ -9,7 +9,6 @@ Usage::
 from __future__ import annotations
 
 import argparse
-import sys
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -19,7 +18,9 @@ def main(argv: list[str] | None = None) -> None:
     )
     parser.add_argument("--port", type=int, default=8765, help="Server port (default: 8765)")
     parser.add_argument("--no-browser", action="store_true", help="Don't auto-open browser")
-    parser.add_argument("--theme", choices=["dark", "light"], default="dark", help="Dashboard theme")
+    parser.add_argument(
+        "--theme", choices=["dark", "light"], default="dark", help="Dashboard theme"
+    )
     parser.add_argument("--version", action="version", version="pixelpulse 0.1.0")
 
     args = parser.parse_args(argv)
@@ -48,7 +49,7 @@ def main(argv: list[str] | None = None) -> None:
         port=args.port,
     )
 
-    print(f"\n  PixelPulse v0.1.0")
+    print("\n  PixelPulse v0.1.0")
     print(f"  Dashboard: http://localhost:{args.port}")
     print(f"  Theme: {args.theme}")
     print(f"  Agents: {len(pp.agents)}")

@@ -72,7 +72,9 @@ def normalize_agents(raw: dict) -> dict[str, AgentConfig]:
         elif isinstance(config, dict):
             result[name] = AgentConfig.from_dict(config)
         else:
-            raise TypeError(f"Agent config for '{name}' must be a dict or AgentConfig, got {type(config)}")
+            raise TypeError(
+                f"Agent config for '{name}' must be a dict or AgentConfig, got {type(config)}"
+            )
     return result
 
 
@@ -87,5 +89,7 @@ def normalize_teams(raw: dict | None) -> dict[str, TeamConfig]:
         elif isinstance(config, dict):
             result[name] = TeamConfig.from_dict(config)
         else:
-            raise TypeError(f"Team config for '{name}' must be a dict or TeamConfig, got {type(config)}")
+            raise TypeError(
+                f"Team config for '{name}' must be a dict or TeamConfig, got {type(config)}"
+            )
     return result
