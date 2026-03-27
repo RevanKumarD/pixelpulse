@@ -208,26 +208,27 @@ function rebuildLayout() {
   CONTENT_TILES_H = PAD_TOP + gridRows * maxRoomRows + (gridRows - 1) * ROOM_GAP + orchHeight + PAD_BOTTOM;
 }
 
-// Team colors for room walls/floors
+// Team colors for room walls/floors — floor colors closer together for softer tile pattern
 const TEAM_STYLES = {
-  research: { wall: "#0e4d64", floor1: "#0d1e2e", floor2: "#16304a", accent: "#00d4ff" },
-  design:   { wall: "#4a1942", floor1: "#1c0e26", floor2: "#2e163e", accent: "#ff6ec7" },
-  commerce: { wall: "#14432d", floor1: "#0d1e11", floor2: "#17311d", accent: "#39ff14" },
-  learning: { wall: "#4a3510", floor1: "#1e1608", floor2: "#302513", accent: "#ffae00" },
+  research: { wall: "#105a74", floor1: "#0f2236", floor2: "#152d44", accent: "#00d4ff" },
+  design:   { wall: "#551e4c", floor1: "#1e1028", floor2: "#281838", accent: "#ff6ec7" },
+  commerce: { wall: "#1a5236", floor1: "#0f2216", floor2: "#162c1e", accent: "#39ff14" },
+  learning: { wall: "#553f14", floor1: "#20180a", floor2: "#2a2010", accent: "#ffae00" },
 };
 
 // Color palette for dynamic team generation (teams not in TEAM_STYLES get a deterministic style)
+// Floor colors kept close together for soft tile pattern; walls slightly brighter
 const DYNAMIC_COLORS = [
-  { wall: "#0e4d64", floor1: "#0d1e2e", floor2: "#16304a", accent: "#00d4ff" },
-  { wall: "#4a1942", floor1: "#1c0e26", floor2: "#2e163e", accent: "#ff6ec7" },
-  { wall: "#14432d", floor1: "#0d1e11", floor2: "#17311d", accent: "#39ff14" },
-  { wall: "#4a3510", floor1: "#1e1608", floor2: "#302513", accent: "#ffae00" },
-  { wall: "#2a1a4a", floor1: "#14101e", floor2: "#211832", accent: "#aa88ff" },
-  { wall: "#4a2a0e", floor1: "#1e1408", floor2: "#301e0c", accent: "#ff8844" },
-  { wall: "#0e4a4a", floor1: "#0d1e1e", floor2: "#163030", accent: "#44ffdd" },
-  { wall: "#4a0e2a", floor1: "#1c0e18", floor2: "#2e1626", accent: "#ff44aa" },
-  { wall: "#3a3a10", floor1: "#1a1a08", floor2: "#28280e", accent: "#dddd44" },
-  { wall: "#0e2a4a", floor1: "#0d141e", floor2: "#162030", accent: "#4488ff" },
+  { wall: "#105a74", floor1: "#0f2236", floor2: "#152d44", accent: "#00d4ff" },
+  { wall: "#551e4c", floor1: "#1e1028", floor2: "#281838", accent: "#ff6ec7" },
+  { wall: "#1a5236", floor1: "#0f2216", floor2: "#162c1e", accent: "#39ff14" },
+  { wall: "#553f14", floor1: "#20180a", floor2: "#2a2010", accent: "#ffae00" },
+  { wall: "#351f55", floor1: "#161220", floor2: "#201a30", accent: "#aa88ff" },
+  { wall: "#553314", floor1: "#201608", floor2: "#2a200e", accent: "#ff8844" },
+  { wall: "#145555", floor1: "#0f2020", floor2: "#182a2a", accent: "#44ffdd" },
+  { wall: "#551435", floor1: "#1e1018", floor2: "#281822", accent: "#ff44aa" },
+  { wall: "#444414", floor1: "#1c1c0a", floor2: "#24240e", accent: "#dddd44" },
+  { wall: "#143555", floor1: "#0f1620", floor2: "#18202a", accent: "#4488ff" },
 ];
 
 /**
@@ -1543,10 +1544,12 @@ function drawRoom(rx, ry, teamId, roomCols, roomRows) {
   const s = TILE_SIZE * zoom;
   const style = getTeamStyle(teamId) || TEAM_STYLES.research;
 
-  // ── Floor: base fill + subtle alternating tile shimmer ──────
+  // ── Floor: base fill + SOFT alternating tile shimmer ──────
+  // Blend floor1 and floor2 closer together for a softer checkerboard
   ctx.fillStyle = style.floor1;
   ctx.fillRect(rx, ry, roomCols * s, roomRows * s);
 
+  ctx.globalAlpha = 0.5;  // softer tile contrast (was 1.0)
   ctx.fillStyle = style.floor2;
   for (let r = 0; r < roomRows; r++) {
     for (let c = 0; c < roomCols; c++) {
@@ -1555,11 +1558,12 @@ function drawRoom(rx, ry, teamId, roomCols, roomRows) {
       }
     }
   }
+  ctx.globalAlpha = 1;
 
-  // Grout lines: 1px dark grid at tile boundaries (pablodelucca floor pattern)
+  // Grout lines: softer, thinner grid
   ctx.save();
-  ctx.strokeStyle = "rgba(0,0,0,0.3)";
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = "rgba(0,0,0,0.15)";  // was 0.3
+  ctx.lineWidth = 0.5;  // was 1
   ctx.beginPath();
   for (let c = 1; c < roomCols; c++) {
     const lx = Math.round(rx + c * s) + 0.5;
@@ -1572,40 +1576,86 @@ function drawRoom(rx, ry, teamId, roomCols, roomRows) {
     ctx.lineTo(rx + roomCols * s, ly);
   }
   ctx.stroke();
-
-  // Sub-tile grid (half-tile lines — very faint texture detail)
-  if (zoom >= 1.0) {
-    const hs = s / 2;
-    ctx.strokeStyle = "rgba(0,0,0,0.08)";
-    ctx.lineWidth = 0.5;
-    ctx.beginPath();
-    for (let c = 0; c < roomCols; c++) {
-      const lx = Math.round(rx + c * s + hs) + 0.5;
-      ctx.moveTo(lx, ry);
-      ctx.lineTo(lx, ry + roomRows * s);
-    }
-    for (let r = 0; r < roomRows; r++) {
-      const ly = Math.round(ry + r * s + hs) + 0.5;
-      ctx.moveTo(rx, ly);
-      ctx.lineTo(rx + roomCols * s, ly);
-    }
-    ctx.stroke();
-  }
   ctx.restore();
 
-  // Center ambient light — radial glow from room accent color
+  // ── Center carpet/rug — warm tinted area to break up tiles ──
   {
-    const cx = rx + (roomCols * s) / 2;
-    const cy = ry + (roomRows * s) / 2;
-    const radius = Math.min(roomCols, roomRows) * s * 0.7;
+    const inset = Math.max(1.5, roomCols * 0.18);
+    const carpetX = rx + inset * s;
+    const carpetY = ry + inset * s;
+    const carpetW = (roomCols - inset * 2) * s;
+    const carpetH = (roomRows - inset * 2) * s;
     const hex = style.accent;
-    const ar = parseInt(hex.slice(1, 3), 16);
-    const ag = parseInt(hex.slice(3, 5), 16);
-    const ab = parseInt(hex.slice(5, 7), 16);
-    const ambGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
-    ambGrad.addColorStop(0, `rgba(${ar},${ag},${ab},0.06)`);
+    const cr = parseInt(hex.slice(1, 3), 16);
+    const cg = parseInt(hex.slice(3, 5), 16);
+    const cb = parseInt(hex.slice(5, 7), 16);
+    ctx.save();
+    ctx.globalAlpha = 0.06;
+    ctx.fillStyle = `rgb(${cr},${cg},${cb})`;
+    ctx.beginPath();
+    ctx.roundRect(carpetX, carpetY, carpetW, carpetH, s * 0.3);
+    ctx.fill();
+    // Carpet border — subtle accent outline
+    ctx.globalAlpha = 0.12;
+    ctx.strokeStyle = `rgb(${cr},${cg},${cb})`;
+    ctx.lineWidth = Math.max(1, zoom * 0.8);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // ── Overhead ceiling lights — warm white pools ──────────────
+  // 2–3 light sources depending on room size, simulating fluorescent panels
+  {
+    const hex = style.accent;
+    const lr = parseInt(hex.slice(1, 3), 16);
+    const lg = parseInt(hex.slice(3, 5), 16);
+    const lb = parseInt(hex.slice(5, 7), 16);
+    // Blend accent with warm white (200,190,170) for natural office light
+    const wr = Math.round(lr * 0.3 + 200 * 0.7);
+    const wg = Math.round(lg * 0.3 + 190 * 0.7);
+    const wb = Math.round(lb * 0.3 + 170 * 0.7);
+    const lightRadius = Math.min(roomCols, roomRows) * s * 0.45;
+
+    // Primary center light
+    const cx0 = rx + (roomCols * s) / 2;
+    const cy0 = ry + (roomRows * s) / 2;
+    const grad0 = ctx.createRadialGradient(cx0, cy0, 0, cx0, cy0, lightRadius);
+    grad0.addColorStop(0, `rgba(${wr},${wg},${wb},0.10)`);
+    grad0.addColorStop(0.5, `rgba(${wr},${wg},${wb},0.04)`);
+    grad0.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = grad0;
+    ctx.fillRect(rx, ry, roomCols * s, roomRows * s);
+
+    // Secondary lights at 1/3 and 2/3 horizontal (for rooms >= 9 tiles)
+    if (roomCols >= 9) {
+      const lightY = ry + roomRows * s * 0.4;
+      for (const frac of [0.3, 0.7]) {
+        const lx = rx + roomCols * s * frac;
+        const grad = ctx.createRadialGradient(lx, lightY, 0, lx, lightY, lightRadius * 0.65);
+        grad.addColorStop(0, `rgba(${wr},${wg},${wb},0.07)`);
+        grad.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = grad;
+        ctx.fillRect(rx, ry, roomCols * s, roomRows * s);
+      }
+    }
+
+    // Accent-colored ambient (kept from original but boosted slightly)
+    const ambGrad = ctx.createRadialGradient(cx0, cy0, 0, cx0, cy0, lightRadius * 1.3);
+    ambGrad.addColorStop(0, `rgba(${lr},${lg},${lb},0.08)`);
     ambGrad.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = ambGrad;
+    ctx.fillRect(rx, ry, roomCols * s, roomRows * s);
+  }
+
+  // ── Corner vignette — darken edges for depth ──────────────
+  {
+    const vigRadius = Math.max(roomCols, roomRows) * s * 0.8;
+    const cx = rx + (roomCols * s) / 2;
+    const cy = ry + (roomRows * s) / 2;
+    const vigGrad = ctx.createRadialGradient(cx, cy, vigRadius * 0.5, cx, cy, vigRadius);
+    vigGrad.addColorStop(0, "rgba(0,0,0,0)");
+    vigGrad.addColorStop(1, "rgba(0,0,0,0.12)");
+    ctx.fillStyle = vigGrad;
     ctx.fillRect(rx, ry, roomCols * s, roomRows * s);
   }
 
@@ -1617,41 +1667,78 @@ function drawRoom(rx, ry, teamId, roomCols, roomRows) {
   ctx.fillRect(rx + roomCols * s - wallW, ry, wallW, roomRows * s);   // right
   ctx.fillRect(rx, ry + roomRows * s - wallW, roomCols * s, wallW);   // bottom
 
-  // Inner wall shadow — darkening just inside all four walls
+  // Inner wall shadow — softer, more natural
   ctx.save();
-  const shadowW = Math.max(4, zoom * 6);
+  const shadowW = Math.max(4, zoom * 5);
   const shadowGradT = ctx.createLinearGradient(rx, ry + wallW, rx, ry + wallW + shadowW);
-  shadowGradT.addColorStop(0, "rgba(0,0,0,0.25)");
+  shadowGradT.addColorStop(0, "rgba(0,0,0,0.18)");  // was 0.25
   shadowGradT.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = shadowGradT;
   ctx.fillRect(rx + wallW, ry + wallW, roomCols * s - wallW * 2, shadowW);
 
   const shadowGradL = ctx.createLinearGradient(rx + wallW, ry, rx + wallW + shadowW, ry);
-  shadowGradL.addColorStop(0, "rgba(0,0,0,0.2)");
+  shadowGradL.addColorStop(0, "rgba(0,0,0,0.12)");  // was 0.2
   shadowGradL.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = shadowGradL;
   ctx.fillRect(rx + wallW, ry, shadowW, roomRows * s);
 
   const shadowGradR = ctx.createLinearGradient(rx + roomCols * s - wallW, ry, rx + roomCols * s - wallW - shadowW, ry);
-  shadowGradR.addColorStop(0, "rgba(0,0,0,0.2)");
+  shadowGradR.addColorStop(0, "rgba(0,0,0,0.12)");  // was 0.2
   shadowGradR.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = shadowGradR;
   ctx.fillRect(rx + roomCols * s - wallW - shadowW, ry, shadowW, roomRows * s);
   ctx.restore();
 
-  // Accent highlight on top wall edge
+  // Accent highlight on top wall edge — brighter neon strip
   ctx.fillStyle = style.accent;
-  ctx.globalAlpha = 0.55;
-  ctx.fillRect(rx, ry, roomCols * s, zoom * 2);
+  ctx.globalAlpha = 0.65;  // was 0.55
+  ctx.fillRect(rx, ry, roomCols * s, Math.max(2, zoom * 2.5));
   ctx.globalAlpha = 1;
 
-  // Baseboard: thin accent strip at bottom of side walls (wainscoting detail)
-  ctx.fillStyle = style.accent;
-  ctx.globalAlpha = 0.18;
-  const baseH = Math.max(2, zoom * 1.5);
-  ctx.fillRect(rx + wallW, ry + roomRows * s - wallW - baseH, roomCols * s - wallW * 2, baseH);
-  ctx.fillRect(rx + wallW, ry + wallW, baseH, roomRows * s - wallW * 2);  // left baseboard
-  ctx.globalAlpha = 1;
+  // Baseboard: brighter accent strips on all 4 walls
+  {
+    const baseH = Math.max(2, zoom * 2);  // was 1.5
+    ctx.fillStyle = style.accent;
+    ctx.globalAlpha = 0.28;  // was 0.18
+
+    // Bottom baseboard
+    ctx.fillRect(rx + wallW, ry + roomRows * s - wallW - baseH, roomCols * s - wallW * 2, baseH);
+    // Left baseboard
+    ctx.fillRect(rx + wallW, ry + wallW, baseH, roomRows * s - wallW * 2);
+    // Right baseboard
+    ctx.fillRect(rx + roomCols * s - wallW - baseH, ry + wallW, baseH, roomRows * s - wallW * 2);
+
+    ctx.globalAlpha = 1;
+  }
+
+  // ── Wall light fixtures — small glowing dots on top wall ──
+  {
+    const hex = style.accent;
+    const flr = parseInt(hex.slice(1, 3), 16);
+    const flg = parseInt(hex.slice(3, 5), 16);
+    const flb = parseInt(hex.slice(5, 7), 16);
+    const fixtureCount = roomCols >= 12 ? 3 : 2;
+    const fixtureSpacing = roomCols * s / (fixtureCount + 1);
+
+    for (let fi = 1; fi <= fixtureCount; fi++) {
+      const fx = rx + fi * fixtureSpacing;
+      const fy = ry + wallW + zoom * 2;
+      const fr = Math.max(2, zoom * 2.5);
+
+      // Glow halo
+      const fGrad = ctx.createRadialGradient(fx, fy, 0, fx, fy, fr * 4);
+      fGrad.addColorStop(0, `rgba(${flr},${flg},${flb},0.15)`);
+      fGrad.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = fGrad;
+      ctx.fillRect(fx - fr * 4, fy - fr * 4, fr * 8, fr * 8);
+
+      // Fixture dot
+      ctx.fillStyle = `rgba(${Math.min(255, flr + 60)},${Math.min(255, flg + 60)},${Math.min(255, flb + 60)},0.9)`;
+      ctx.beginPath();
+      ctx.arc(fx, fy, fr, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
 
   // ── Active stage highlight ───────────────────────────────────
   const pipeline = getPipeline();
@@ -2221,7 +2308,7 @@ function buildRoomLayout(team, teamId, roomCols, roomRows) {
     });
   }
 
-  // Decorations — scale with room size, spread to corners
+  // Decorations — scale with room size, spread to corners and walls
   const teamDecor = {
     research:  "whiteboard",
     design:    "easel",
@@ -2229,27 +2316,37 @@ function buildRoomLayout(team, teamId, roomCols, roomRows) {
     learning:  "trophy",
   };
   const FALLBACK_DECORS = ["whiteboard", "easel", "box", "trophy", "plant"];
-  // Compute hash for unknown team fallback decor (reuse same hash logic as getTeamStyle)
   let _teamHash = 0;
   for (let _i = 0; _i < teamId.length; _i++) {
     _teamHash = ((_teamHash << 5) - _teamHash) + teamId.charCodeAt(_i);
     _teamHash |= 0;
   }
   const decor = teamDecor[teamId] || FALLBACK_DECORS[Math.abs(_teamHash) % FALLBACK_DECORS.length];
-  items.push({ type: "plant", col: 0.5, row: 0.5 });                     // top-left corner
-  if (decor) {
-    items.push({ type: decor, col: roomCols - 1.5, row: 0.5 });          // top-right corner
-  }
-  items.push({ type: "bookshelf", col: 0.5, row: roomRows - 2.25 });    // bottom-left corner (inside room)
 
-  // Extra furniture for larger rooms
-  if (roomCols >= 12) {
-    items.push({ type: "plant", col: roomCols - 1.5, row: roomRows - 2.25 });
-    items.push({ type: "bookshelf", col: roomCols - 1.5, row: Math.floor(roomRows / 2) });
+  // Core furniture — always present (3 items)
+  items.push({ type: "plant", col: 0.5, row: 0.5 });                     // top-left
+  items.push({ type: decor, col: roomCols - 1.5, row: 0.5 });            // top-right
+  items.push({ type: "bookshelf", col: 0.5, row: roomRows - 2.25 });     // bottom-left
+
+  // Standard rooms (9+): add bottom-right plant and mid-wall trophy
+  if (roomCols >= 9) {
+    items.push({ type: "plant", col: roomCols - 1.5, row: roomRows - 2.25 });  // bottom-right
+    // Alternate between trophy and box on right wall midpoint
+    const midDecor = (Math.abs(_teamHash) % 2 === 0) ? "trophy" : "box";
+    items.push({ type: midDecor, col: roomCols - 1.5, row: Math.floor(roomRows / 2) });
   }
+
+  // Large rooms (12+): fill more wall space
+  if (roomCols >= 12) {
+    items.push({ type: "bookshelf", col: 0.5, row: Math.floor(roomRows / 2) });     // left wall mid
+    items.push({ type: "plant", col: Math.floor(roomCols / 2), row: 0.5 });          // top center
+    items.push({ type: "easel", col: Math.floor(roomCols * 0.3), row: roomRows - 2.0 }); // bottom third
+  }
+
+  // Extra-large rooms (14+): additional symmetry
   if (roomCols >= 14) {
-    items.push({ type: "plant", col: Math.floor(roomCols / 2), row: 0.5 });
-    items.push({ type: "bookshelf", col: 0.5, row: Math.floor(roomRows / 2) });
+    items.push({ type: "whiteboard", col: Math.floor(roomCols * 0.7), row: 0.5 });   // top 2/3
+    items.push({ type: "box", col: Math.floor(roomCols * 0.7), row: roomRows - 2.0 }); // bottom 2/3
   }
 
   // Register furniture positions for collision detection
