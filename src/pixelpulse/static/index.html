@@ -34,6 +34,21 @@
         <option value="1200">2x</option>
       </select>
       <span class="topbar__divider"></span>
+      <div class="team-filter" id="team-filter">
+        <button class="btn btn--ghost" id="team-filter-btn">
+          Teams <span id="team-filter-badge"></span>
+        </button>
+        <div class="team-filter__dropdown" id="team-filter-dropdown" hidden>
+          <div class="team-filter__presets">
+            <button class="btn btn--xs" id="filter-show-all">Show All</button>
+            <button class="btn btn--xs" id="filter-pipeline">Pipeline Only</button>
+          </div>
+          <div class="team-filter__list" id="team-filter-list">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </div>
+      <span class="topbar__divider"></span>
       <label id="theme-toggle" class="theme-switch" title="Toggle theme">
         <input type="checkbox" id="theme-checkbox">
         <span class="theme-switch__track">
@@ -85,6 +100,8 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
         </button>
       </div>
+      <!-- Minimap — bottom-right corner of canvas area -->
+      <canvas id="minimap-canvas" class="minimap" width="160" height="100" title="Minimap — click to pan"></canvas>
     </div>
 
     <!-- Sidebar panel — compact static info only -->

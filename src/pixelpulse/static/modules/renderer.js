@@ -33,6 +33,9 @@ import {
   setFocusedRoom,
   isRoomCollapsed,
   toggleRoomCollapsed,
+  isTeamHidden,
+  setHiddenTeams,
+  getVisibleTeamIds,
 } from "./state.js";
 import {
   TILE_SIZE,
@@ -155,10 +158,11 @@ function computeTeamOrder(teams, pipelineStages, stageToTeam) {
  */
 function rebuildLayout() {
   const teams = TEAMS;
-  const teamIds = computeTeamOrder(teams, PIPELINE_STAGES, STAGE_TO_TEAM);
-  layoutTeamOrder = teamIds;
+  const allTeamIds = computeTeamOrder(teams, PIPELINE_STAGES, STAGE_TO_TEAM);
+  // Filter out hidden teams (team filter)
+  layoutTeamOrder = allTeamIds.filter(id => !isTeamHidden(id));
 
-  const visibleCount = teamIds.length || 1;
+  const visibleCount = layoutTeamOrder.length || 1;
   const grid = computeGrid(visibleCount);
   gridCols = grid.cols;
   gridRows = grid.rows;
@@ -167,10 +171,10 @@ function rebuildLayout() {
 
   if (sizingMode === 'uniform') {
     // All rooms same size — based on team with most agents
-    const maxAgents = Math.max(1, ...teamIds.map(id => (teams[id]?.agents || []).length));
+    const maxAgents = Math.max(1, ...layoutTeamOrder.map(id => (teams[id]?.agents || []).length));
     const uniformSize = computeRoomSize(maxAgents, 'uniform');
     roomDims = {};
-    for (const id of teamIds) {
+    for (const id of layoutTeamOrder) {
       roomDims[id] = { cols: uniformSize, rows: uniformSize };
     }
     maxRoomCols = uniformSize;
@@ -179,7 +183,7 @@ function rebuildLayout() {
     // Adaptive or compact — per-room sizing
     roomDims = {};
     let widest = 7, tallest = 7;
-    for (const id of teamIds) {
+    for (const id of layoutTeamOrder) {
       const agentCount = (teams[id]?.agents || []).length;
       const size = computeRoomSize(agentCount, sizingMode);
       roomDims[id] = { cols: size, rows: size };
@@ -723,6 +727,125 @@ function tickRoaming() {
 // ---- Sidebar DOM refs ----
 let pipelineContainer, runsContainer, costContainer, eventLogContainer, commsFeedContainer, agentActivityContainer, connDot, connText;
 
+// ---- Minimap ----
+let minimapCanvas, minimapCtx;
+
+function initMinimap() {
+  minimapCanvas = document.getElementById("minimap-canvas");
+  if (!minimapCanvas) return;
+  minimapCtx = minimapCanvas.getContext("2d");
+
+  // Click-to-pan: translate minimap click fraction to main canvas pan
+  minimapCanvas.addEventListener("click", (e) => {
+    if (!minimapCtx) return;
+    const rect = minimapCanvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const mw = minimapCanvas.width;
+    const mh = minimapCanvas.height;
+    const fracX = mx / mw;
+    const fracY = my / mh;
+
+    const s = TILE_SIZE * zoom;
+    const contentW = CONTENT_TILES_W * s;
+    const contentH = CONTENT_TILES_H * s;
+    const dpr = window.devicePixelRatio || 1;
+    const cw = canvas.width;
+    const ch = canvas.height;
+
+    // Pan so the clicked content fraction is at canvas center
+    panX = ((cw / 2) - (fracX * contentW + (cw - contentW) / 2)) / dpr;
+    panY = ((ch / 2) - (fracY * contentH + (ch - contentH) / 2)) / dpr;
+  });
+}
+
+function drawMinimap() {
+  if (!minimapCanvas || !minimapCtx) return;
+  const mw = minimapCanvas.width;
+  const mh = minimapCanvas.height;
+  const mc = minimapCtx;
+
+  // Auto-hide when content fits viewport (no zoom or pan)
+  const needsMinimap = userZoom !== 1 || panX !== 0 || panY !== 0;
+  minimapCanvas.classList.toggle("minimap--hidden", !needsMinimap);
+  if (!needsMinimap) return;
+
+  mc.clearRect(0, 0, mw, mh);
+  mc.fillStyle = "rgba(10,14,23,0.9)";
+  mc.fillRect(0, 0, mw, mh);
+
+  const dpr = window.devicePixelRatio || 1;
+  const s = TILE_SIZE * zoom;
+  const cw = canvas.width;
+  const ch = canvas.height;
+  const contentW = CONTENT_TILES_W * s;
+  const contentH = CONTENT_TILES_H * s;
+
+  const contentOffsetX = Math.floor((cw - contentW) / 2) + panX * dpr;
+  const contentOffsetY = Math.floor((ch - contentH) / 2) + panY * dpr;
+  const offsetX = contentOffsetX + PAD_LEFT * s;
+  const offsetY = contentOffsetY + PAD_TOP * s;
+  const orchOffset = (getSetting('orchestratorVisible') !== false && gridRows > 1)
+    ? (ORCH_ROWS + 1) : 0;
+
+  // Draw simplified room rects
+  for (let i = 0; i < layoutTeamOrder.length; i++) {
+    const teamId = layoutTeamOrder[i];
+    const team = TEAMS[teamId];
+    if (!team) continue;
+    const roomCol = i % gridCols;
+    const roomRow = Math.floor(i / gridCols);
+    const dims = roomDims[teamId] || { cols: 9, rows: 9 };
+    const rx = offsetX + roomCol * (maxRoomCols + ROOM_GAP) * s;
+    let ry;
+    if (roomRow === 0) {
+      ry = offsetY;
+    } else {
+      ry = offsetY + maxRoomRows * s + orchOffset * s + (roomRow - 1) * (maxRoomRows + ROOM_GAP) * s;
+    }
+
+    // Project main-canvas pixels → minimap pixels
+    const mmx = (rx / cw) * mw;
+    const mmy = (ry / ch) * mh;
+    const mmrw = (dims.cols * s / cw) * mw;
+    const mmrh = (dims.rows * s / ch) * mh;
+
+    const style = TEAM_STYLES[teamId] || TEAM_STYLES.research;
+    const hex = style.accent.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+
+    mc.fillStyle = `rgba(${r},${g},${b},0.5)`;
+    mc.fillRect(Math.round(mmx), Math.round(mmy), Math.max(2, Math.round(mmrw)), Math.max(2, Math.round(mmrh)));
+
+    if (getFocusedRoom() === teamId) {
+      mc.strokeStyle = style.accent;
+      mc.lineWidth = 1.5;
+      mc.strokeRect(Math.round(mmx), Math.round(mmy), Math.max(2, Math.round(mmrw)), Math.max(2, Math.round(mmrh)));
+    }
+  }
+
+  // Viewport rectangle
+  const vpLeft = -contentOffsetX;
+  const vpTop = -contentOffsetY;
+  const vmx = (vpLeft / contentW) * mw;
+  const vmy = (vpTop / contentH) * mh;
+  const vmw = (cw / contentW) * mw;
+  const vmh = (ch / contentH) * mh;
+
+  mc.strokeStyle = "rgba(255,255,255,0.8)";
+  mc.lineWidth = 1;
+  mc.strokeRect(Math.round(vmx), Math.round(vmy), Math.round(vmw), Math.round(vmh));
+
+  // Label
+  mc.fillStyle = "rgba(100,116,139,0.8)";
+  mc.font = `7px "JetBrains Mono", monospace`;
+  mc.textAlign = "left";
+  mc.textBaseline = "top";
+  mc.fillText("MAP", 3, 2);
+}
+
 // ---- Init ----
 
 let initialized = false;
@@ -842,6 +965,7 @@ export function init() {
   renderPipeline();
   renderCost();
   renderAgentActivity();
+  initTeamFilter();
 
   subscribe((type, detail) => {
     switch (type) {
@@ -854,6 +978,7 @@ export function init() {
     }
   });
 
+  initMinimap();
   requestAnimationFrame(gameLoop);
 }
 
@@ -1292,6 +1417,9 @@ function render() {
     ctx.fillText("scroll to zoom · shift-drag to pan · dbl-click room to focus", 12, h - 8);
     ctx.restore();
   }
+
+  // ---- Minimap ----
+  drawMinimap();
 }
 
 // ---- Room Rendering ----
@@ -2774,6 +2902,78 @@ export function renderComms() {
 
   // Auto-scroll to show most recent entries at bottom
   commsFeedContainer.scrollTop = commsFeedContainer.scrollHeight;
+}
+
+// ---- Team Filter ----
+
+function initTeamFilter() {
+  const btn = document.getElementById("team-filter-btn");
+  const dropdown = document.getElementById("team-filter-dropdown");
+  const list = document.getElementById("team-filter-list");
+  const badge = document.getElementById("team-filter-badge");
+  if (!btn || !dropdown) return;
+
+  // Toggle dropdown
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    dropdown.hidden = !dropdown.hidden;
+    if (!dropdown.hidden) _populateFilterList();
+  });
+
+  // Close on outside click
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".team-filter")) dropdown.hidden = true;
+  });
+
+  // Presets
+  document.getElementById("filter-show-all")?.addEventListener("click", () => {
+    setHiddenTeams([]);
+    _populateFilterList();
+    _onFilterChange();
+  });
+
+  document.getElementById("filter-pipeline")?.addEventListener("click", () => {
+    const pipelineTeams = new Set(
+      PIPELINE_STAGES.map(s => STAGE_TO_TEAM[s]).filter(Boolean)
+    );
+    const hidden = Object.keys(TEAMS).filter(id => !pipelineTeams.has(id));
+    setHiddenTeams(hidden);
+    _populateFilterList();
+    _onFilterChange();
+  });
+
+  function _populateFilterList() {
+    if (!list) return;
+    list.innerHTML = "";
+    for (const teamId of Object.keys(TEAMS)) {
+      const team = TEAMS[teamId];
+      const label = document.createElement("label");
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = !isTeamHidden(teamId);
+      cb.addEventListener("change", () => {
+        const hidden = Object.keys(TEAMS).filter(id => {
+          if (id === teamId) return !cb.checked;
+          return isTeamHidden(id);
+        });
+        setHiddenTeams(hidden);
+        _onFilterChange();
+      });
+      label.appendChild(cb);
+      label.appendChild(document.createTextNode(` ${team.label || teamId}`));
+      list.appendChild(label);
+    }
+  }
+
+  function _onFilterChange() {
+    // Update badge count
+    const total = Object.keys(TEAMS).length;
+    const visible = getVisibleTeamIds().length;
+    if (badge) badge.textContent = visible < total ? `${visible}/${total}` : "";
+    // Rebuild layout with only visible teams
+    rebuildLayout();
+    resize();
+  }
 }
 
 function escapeHtml(str) {
