@@ -1177,14 +1177,16 @@ function drawRoomLabel(rx, ry, team, teamId, roomCols) {
 // ---- Orchestrator Zone ----
 
 function drawOrchestratorZone(offsetX, offsetY, totalW, s) {
+  if (getSetting('orchestratorVisible') === false) return;
+
   const orch = getOrchestrator();
   const pipeline = getPipeline();
 
-  // Zone position: below the first row of rooms
-  const zy = offsetY + maxRoomRows * s;
+  // Zone position: below the first row of rooms, uses ORCH_ROWS height
+  const zy = offsetY + maxRoomRows * s + s * 0.5;  // half tile gap
   const zx = offsetX;
   const zw = totalW;
-  const zh = ROOM_GAP * s;
+  const zh = ORCH_ROWS * s;
   const cx = zx + zw / 2;
 
   // Background — dark panel with subtle gradient
