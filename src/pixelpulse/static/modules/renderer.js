@@ -208,6 +208,41 @@ const TEAM_STYLES = {
   learning: { wall: "#4a3510", floor1: "#1a1408", floor2: "#22190a", accent: "#ffae00" },
 };
 
+// Color palette for dynamic team generation (teams not in TEAM_STYLES get a deterministic style)
+const DYNAMIC_COLORS = [
+  { wall: "#0e4d64", floor1: "#0c1a2a", floor2: "#0f2236", accent: "#00d4ff" },
+  { wall: "#4a1942", floor1: "#1a0c20", floor2: "#220f28", accent: "#ff6ec7" },
+  { wall: "#14432d", floor1: "#0c1a10", floor2: "#0f2214", accent: "#39ff14" },
+  { wall: "#4a3510", floor1: "#1a1408", floor2: "#22190a", accent: "#ffae00" },
+  { wall: "#2a1a4a", floor1: "#120c1a", floor2: "#180f22", accent: "#aa88ff" },
+  { wall: "#4a2a0e", floor1: "#1a120c", floor2: "#22180f", accent: "#ff8844" },
+  { wall: "#0e4a4a", floor1: "#0c1a1a", floor2: "#0f2222", accent: "#44ffdd" },
+  { wall: "#4a0e2a", floor1: "#1a0c12", floor2: "#220f18", accent: "#ff44aa" },
+  { wall: "#3a3a10", floor1: "#18180c", floor2: "#20200f", accent: "#dddd44" },
+  { wall: "#0e2a4a", floor1: "#0c121a", floor2: "#0f1822", accent: "#4488ff" },
+];
+
+/**
+ * Get style for a team. Returns the hardcoded style if known,
+ * otherwise generates a deterministic style from the teamId hash and caches it.
+ */
+function getTeamStyle(teamId) {
+  if (getTeamStyle(teamId)) return getTeamStyle(teamId);
+
+  // Generate deterministic style from team ID via djb2 hash
+  let hash = 0;
+  for (let i = 0; i < teamId.length; i++) {
+    hash = ((hash << 5) - hash) + teamId.charCodeAt(i);
+    hash |= 0;
+  }
+  const idx = Math.abs(hash) % DYNAMIC_COLORS.length;
+  const style = DYNAMIC_COLORS[idx];
+
+  // Cache it so repeated calls are O(1)
+  getTeamStyle(teamId) = style;
+  return style;
+}
+
 // ---- State ----
 let canvas, ctx;
 let zoom = 2;
@@ -1162,6 +1197,11 @@ function render() {
     }
   }
 
+  // ---- Flow connectors overlay ----
+  if (getSetting('showConnectors')) {
+    drawFlowConnectors(offsetX, offsetY, s, orchOffset);
+  }
+
   // ---- Draw orchestrator zone ----
   drawOrchestratorZone(offsetX, offsetY, totalW, s);
 
@@ -1222,7 +1262,7 @@ function render() {
 
 function drawRoom(rx, ry, teamId, roomCols, roomRows) {
   const s = TILE_SIZE * zoom;
-  const style = TEAM_STYLES[teamId] || TEAM_STYLES.research;
+  const style = getTeamStyle(teamId) || TEAM_STYLES.research;
 
   // Checkerboard floor
   for (let r = 0; r < roomRows; r++) {
@@ -1260,7 +1300,7 @@ function drawRoom(rx, ry, teamId, roomCols, roomRows) {
 function drawRoomLabel(rx, ry, team, teamId, roomCols) {
   const s = TILE_SIZE * zoom;
   const dpr = window.devicePixelRatio || 1;
-  const style = TEAM_STYLES[teamId];
+  const style = getTeamStyle(teamId);
 
   // Count active agents in this team
   const agentStates = team.agents.map(n => getAgent(n)).filter(Boolean);
@@ -1337,6 +1377,89 @@ function drawRoomLabel(rx, ry, team, teamId, roomCols) {
   };
 }
 
+// ---- Flow Connectors Overlay ----
+
+function drawFlowConnectors(offsetX, offsetY, s, orchOffset) {
+  const pipelineTeams = [];
+  const seen = new Set();
+  for (const stage of PIPELINE_STAGES) {
+    const teamId = STAGE_TO_TEAM[stage];
+    if (teamId && TEAMS[teamId] && !seen.has(teamId)) {
+      pipelineTeams.push(teamId);
+      seen.add(teamId);
+    }
+  }
+  if (pipelineTeams.length < 2) return;
+
+  ctx.save();
+  ctx.setLineDash([Math.max(3, zoom * 2), Math.max(3, zoom * 2)]);
+  ctx.lineWidth = Math.max(1, zoom * 0.5);
+
+  for (let i = 0; i < pipelineTeams.length - 1; i++) {
+    const fromId = pipelineTeams[i];
+    const toId = pipelineTeams[i + 1];
+    const fromCenter = _getRoomCenter(fromId, offsetX, offsetY, s, orchOffset);
+    const toCenter = _getRoomCenter(toId, offsetX, offsetY, s, orchOffset);
+    if (!fromCenter || !toCenter) continue;
+
+    const style = TEAM_STYLES[fromId] || TEAM_STYLES.research;
+    const hex = style.accent.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    ctx.strokeStyle = `rgba(${r},${g},${b},0.3)`;
+    ctx.globalAlpha = 1;
+
+    const sameRow = Math.abs(fromCenter.cy - toCenter.cy) < s * 2;
+    ctx.beginPath();
+    ctx.moveTo(fromCenter.cx, fromCenter.cy);
+    if (sameRow) {
+      ctx.lineTo(toCenter.cx, toCenter.cy);
+    } else {
+      const midX = (fromCenter.cx + toCenter.cx) / 2;
+      ctx.lineTo(midX, fromCenter.cy);
+      ctx.lineTo(midX, toCenter.cy);
+      ctx.lineTo(toCenter.cx, toCenter.cy);
+    }
+    ctx.stroke();
+
+    // Arrow head at destination
+    const endAngle = sameRow
+      ? Math.atan2(toCenter.cy - fromCenter.cy, toCenter.cx - fromCenter.cx)
+      : Math.atan2(toCenter.cy - fromCenter.cy, 0);
+    const arrowLen = Math.max(6, zoom * 3);
+    ctx.globalAlpha = 0.5;
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(toCenter.cx, toCenter.cy);
+    ctx.lineTo(toCenter.cx - arrowLen * Math.cos(endAngle - Math.PI / 7), toCenter.cy - arrowLen * Math.sin(endAngle - Math.PI / 7));
+    ctx.moveTo(toCenter.cx, toCenter.cy);
+    ctx.lineTo(toCenter.cx - arrowLen * Math.cos(endAngle + Math.PI / 7), toCenter.cy - arrowLen * Math.sin(endAngle + Math.PI / 7));
+    ctx.stroke();
+    ctx.setLineDash([Math.max(3, zoom * 2), Math.max(3, zoom * 2)]);
+    ctx.globalAlpha = 1;
+  }
+
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+function _getRoomCenter(teamId, offsetX, offsetY, s, orchOffset) {
+  const idx = layoutTeamOrder.indexOf(teamId);
+  if (idx === -1) return null;
+  const roomCol = idx % gridCols;
+  const roomRow = Math.floor(idx / gridCols);
+  const dims = roomDims[teamId] || { cols: 9, rows: 9 };
+  const rx = offsetX + roomCol * (maxRoomCols + ROOM_GAP) * s;
+  let ry;
+  if (roomRow === 0) {
+    ry = offsetY;
+  } else {
+    ry = offsetY + maxRoomRows * s + orchOffset * s + (roomRow - 1) * (maxRoomRows + ROOM_GAP) * s;
+  }
+  return { cx: rx + dims.cols * s / 2, cy: ry + dims.rows * s / 2 };
+}
+
 // ---- Focus Mode Overlay ----
 
 function drawFocusOverlay(focusedTeamId, offsetX, offsetY, s, orchOffset) {
@@ -1375,7 +1498,7 @@ function drawFocusOverlay(focusedTeamId, offsetX, offsetY, s, orchOffset) {
   ctx.restore();
 
   // Accent border around focused room
-  const style = TEAM_STYLES[focusedTeamId] || TEAM_STYLES.research;
+  const style = getTeamStyle(focusedTeamId) || TEAM_STYLES.research;
   ctx.save();
   ctx.strokeStyle = style.accent;
   ctx.lineWidth = Math.max(2, zoom * 1.5);
@@ -1402,7 +1525,7 @@ function drawFocusOverlay(focusedTeamId, offsetX, offsetY, s, orchOffset) {
 function drawCollapsedBadge(rx, ry, teamId, team) {
   const s = TILE_SIZE * zoom;
   const dpr = window.devicePixelRatio || 1;
-  const style = TEAM_STYLES[teamId] || TEAM_STYLES.research;
+  const style = getTeamStyle(teamId) || TEAM_STYLES.research;
 
   // Badge: 3 tiles wide × 1 tile tall
   const bw = 3 * s;
@@ -1688,7 +1811,14 @@ function buildRoomLayout(team, teamId, roomCols, roomRows) {
     commerce:  "box",
     learning:  "trophy",
   };
-  const decor = teamDecor[teamId];
+  const FALLBACK_DECORS = ["whiteboard", "easel", "box", "trophy", "plant"];
+  // Compute hash for unknown team fallback decor (reuse same hash logic as getTeamStyle)
+  let _teamHash = 0;
+  for (let _i = 0; _i < teamId.length; _i++) {
+    _teamHash = ((_teamHash << 5) - _teamHash) + teamId.charCodeAt(_i);
+    _teamHash |= 0;
+  }
+  const decor = teamDecor[teamId] || FALLBACK_DECORS[Math.abs(_teamHash) % FALLBACK_DECORS.length];
   items.push({ type: "plant", col: 0.5, row: 0.5 });                     // top-left corner
   if (decor) {
     items.push({ type: decor, col: roomCols - 1.5, row: 0.5 });          // top-right corner
@@ -1728,7 +1858,7 @@ function drawSpriteWithGlow(spriteData, x, y, teamId) {
   });
 
   if (hasActive) {
-    const style = TEAM_STYLES[teamId];
+    const style = getTeamStyle(teamId);
     ctx.save();
     ctx.globalAlpha = 0.35;
     ctx.fillStyle = style?.accent || "#00d4ff";
@@ -1778,7 +1908,7 @@ function drawAgent(x, y, agentName, teamId, roaming) {
     // Glow effect — different per state
     if (agent.status === "active" || agent.status === "waiting") {
       ctx.save();
-      const accent = TEAM_STYLES[teamId]?.accent || "#00d4ff";
+      const accent = getTeamStyle(teamId)?.accent || "#00d4ff";
       ctx.globalAlpha = 0.2 + 0.1 * Math.sin(tick * 0.08);
       ctx.fillStyle = accent;
       ctx.beginPath();
@@ -1888,7 +2018,7 @@ function drawAgent(x, y, agentName, teamId, roaming) {
   };
 
   // ---- Agent Name + Status Card — positioned to the RIGHT of the sprite ----
-  const accent = TEAM_STYLES[teamId]?.accent || "#fff";
+  const accent = getTeamStyle(teamId)?.accent || "#fff";
   const displayName = agentName.split("-").map(w => w[0].toUpperCase() + w.slice(1)).join(" ");
   const labelX = Math.round(x) + spriteW + zoom * 2;
   const labelY = Math.round(drawY) + spriteH * 0.15;
@@ -2197,7 +2327,7 @@ function drawTooltip() {
   const tip = document.getElementById("tooltip");
   if (!tip) return;
 
-  const accent = TEAM_STYLES[agent.team]?.accent || "#00d4ff";
+  const accent = getTeamStyle(agent.team)?.accent || "#00d4ff";
   const role = AGENT_ROLES[hoveredAgent] || "";
   const displayName = hoveredAgent.split("-").map(w => w[0].toUpperCase() + w.slice(1)).join(" ");
 
