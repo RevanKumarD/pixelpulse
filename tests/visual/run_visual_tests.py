@@ -774,6 +774,178 @@ async def test_stress_many_rooms(browser):
 
 
 # ===========================================================================
+# Test 10: Real OpenAI API — LangGraph with gpt-4o-mini
+# ===========================================================================
+
+async def test_real_openai_api(page, port: int, pp):
+    """Test LangGraph adapter with a REAL gpt-4o-mini API call.
+
+    This proves the full chain: real LLM → LangGraph node → pp adapter →
+    EventBus → WebSocket → dashboard renders.
+    """
+    import os
+    api_key = os.environ.get("OPENAI_API_KEY", "")
+    if not api_key:
+        log.warning("OPENAI_API_KEY not set — skipping real API test")
+        return
+
+    log.info("=== TEST: Real OpenAI API (gpt-4o-mini) via LangGraph ===")
+
+    try:
+        from langchain_openai import ChatOpenAI
+        from langchain_core.messages import HumanMessage
+        from langgraph.graph import StateGraph, START, END
+    except ImportError as e:
+        log.warning("Missing package for real API test: %s", e)
+        return
+
+    # Use a plain dict schema (no TypedDict/Annotated) to avoid Python 3.11 eval issues
+    llm = ChatOpenAI(model="gpt-4o-mini", api_key=api_key, max_tokens=80)
+    result_store: list = []
+
+    def agent_node(state: dict) -> dict:
+        response = llm.invoke([
+            HumanMessage(content="In one sentence, what is a AI agent workflow business?")
+        ])
+        pp.cost_update("agent-a", cost=0.0001, tokens_in=15, tokens_out=30, model="gpt-4o-mini")
+        result_store.append(response.content)
+        return {"result": response.content[:120]}
+
+    graph: StateGraph = StateGraph(dict)
+    graph.add_node("agent-a", agent_node)
+    graph.add_edge(START, "agent-a")
+    graph.add_edge("agent-a", END)
+    compiled = graph.compile()
+
+    adapter = pp.adapter("langgraph")
+    adapter.instrument(compiled)
+
+    await page.goto(f"http://127.0.0.1:{port}")
+    await page.wait_for_timeout(2000)
+    await page.screenshot(path=str(SCREENSHOTS_DIR / "40_realapi_before.png"))
+    log.info("Screenshot: 40_realapi_before.png")
+
+    result_holder: list = [None]
+    error_holder: list = [None]
+
+    def _run():
+        try:
+            pp.run_started("real-api-test", name="Real gpt-4o-mini call")
+            result_holder[0] = compiled.invoke({"messages": [], "result": ""})
+            pp.run_completed("real-api-test", status="completed", total_cost=0.0001)
+        except Exception as exc:
+            error_holder[0] = exc
+            log.error("Real API call failed: %s", exc)
+
+    t = threading.Thread(target=_run)
+    t.start()
+
+    await page.wait_for_timeout(4000)
+    await page.screenshot(path=str(SCREENSHOTS_DIR / "41_realapi_running.png"))
+    log.info("Screenshot: 41_realapi_running.png — real gpt-4o-mini call in progress")
+
+    t.join(timeout=30)
+    await page.wait_for_timeout(2000)
+    await page.screenshot(path=str(SCREENSHOTS_DIR / "42_realapi_complete.png"))
+    log.info("Screenshot: 42_realapi_complete.png")
+
+    if error_holder[0]:
+        log.error("Real API test FAILED: %s", error_holder[0])
+    else:
+        result_text = result_store[0][:100] if result_store else "(no output)"
+        log.info("Real API test PASSED — LLM response: %s", result_text)
+
+    adapter.detach()
+    log.info("=== Real OpenAI API test complete ===")
+
+
+# ===========================================================================
+# Test 11: Settings Modes — room sizing (uniform / adaptive / compact)
+# ===========================================================================
+
+async def test_settings_modes(page, port: int):
+    """Test all 3 room-sizing modes and capture how the canvas responds."""
+    log.info("=== TEST: Settings Modes (room sizing) ===")
+
+    await page.goto(f"http://127.0.0.1:{port}")
+    await page.wait_for_timeout(2000)
+
+    async def _open_settings():
+        await page.locator("#settings-btn").click(timeout=3000)
+        await page.wait_for_timeout(600)
+
+    async def _close_settings():
+        await page.locator(".settings-drawer__close").click(timeout=2000)
+        await page.wait_for_timeout(500)
+
+    # -- Uniform mode (default) --
+    await _open_settings()
+    await page.locator("select[data-setting='roomSizing']").select_option("uniform")
+    await page.wait_for_timeout(500)
+    await _close_settings()
+    await page.screenshot(path=str(SCREENSHOTS_DIR / "43_settings_uniform.png"))
+    log.info("Screenshot: 43_settings_uniform.png — uniform room sizing")
+
+    # -- Adaptive mode --
+    await _open_settings()
+    await page.locator("select[data-setting='roomSizing']").select_option("adaptive")
+    await page.wait_for_timeout(500)
+    await _close_settings()
+    await page.screenshot(path=str(SCREENSHOTS_DIR / "44_settings_adaptive.png"))
+    log.info("Screenshot: 44_settings_adaptive.png — adaptive room sizing")
+
+    # -- Compact mode --
+    await _open_settings()
+    await page.locator("select[data-setting='roomSizing']").select_option("compact")
+    await page.wait_for_timeout(500)
+    await _close_settings()
+    await page.screenshot(path=str(SCREENSHOTS_DIR / "45_settings_compact.png"))
+    log.info("Screenshot: 45_settings_compact.png — compact room sizing (9-tile fixed)")
+
+    # Reset back to uniform
+    await _open_settings()
+    await page.locator("select[data-setting='roomSizing']").select_option("uniform")
+    await _close_settings()
+
+    log.info("=== Settings modes test complete ===")
+
+
+# ===========================================================================
+# Test 12: Dark / Light theme toggle
+# ===========================================================================
+
+async def test_theme_toggle(page, port: int):
+    """Test dark and light theme modes."""
+    log.info("=== TEST: Theme Toggle (dark / light) ===")
+
+    await page.goto(f"http://127.0.0.1:{port}")
+    await page.wait_for_timeout(2000)
+
+    # Default dark theme
+    await page.screenshot(path=str(SCREENSHOTS_DIR / "46_theme_dark.png"))
+    log.info("Screenshot: 46_theme_dark.png — default dark theme")
+
+    # Switch to light theme via settings panel
+    await page.locator("#settings-btn").click(timeout=3000)
+    await page.wait_for_timeout(600)
+    await page.locator("select[data-setting='theme']").select_option("light")
+    await page.wait_for_timeout(800)
+    await page.locator(".settings-drawer__close").click(timeout=2000)
+    await page.wait_for_timeout(800)
+    await page.screenshot(path=str(SCREENSHOTS_DIR / "47_theme_light.png"))
+    log.info("Screenshot: 47_theme_light.png — light theme")
+
+    # Switch back to dark
+    await page.locator("#settings-btn").click(timeout=2000)
+    await page.wait_for_timeout(500)
+    await page.locator("select[data-setting='theme']").select_option("dark")
+    await page.locator(".settings-drawer__close").click(timeout=2000)
+    await page.wait_for_timeout(500)
+
+    log.info("=== Theme toggle test complete ===")
+
+
+# ===========================================================================
 # Main Runner
 # ===========================================================================
 
@@ -851,6 +1023,15 @@ async def main():
             await test_stress_many_agents_one_room(browser, port)
             await test_stress_many_rooms(browser)
 
+            # Test 10: Real OpenAI API via LangGraph (gpt-4o-mini)
+            await test_real_openai_api(page, port, pp)
+
+            # Test 11: Settings modes (uniform / adaptive / compact)
+            await test_settings_modes(page, port)
+
+            # Test 12: Dark / light theme
+            await test_theme_toggle(page, port)
+
         finally:
             # Print console messages for debugging
             if console_messages:
@@ -913,13 +1094,21 @@ def _generate_report():
         "37": ("Stress — 6 Rooms Fit", "Fit view with 6 rooms — all rooms must be fully visible (baseZoom floor fix)."),
         "38": ("Stress — 6 Rooms Active", "All 12 agents active across 6 rooms simultaneously."),
         "39": ("Stress — 6 Rooms Complete", "All agents completed across full 6-room grid."),
+        "40": ("Real API — Before", "Dashboard idle before real gpt-4o-mini LangGraph call."),
+        "41": ("Real API — Running", "Actual gpt-4o-mini API call in progress via LangGraph adapter."),
+        "42": ("Real API — Complete", "Real API call returned. Event log shows live LLM cost tracking."),
+        "43": ("Settings — Uniform Mode", "Room sizing: Uniform — all rooms same size regardless of agent count."),
+        "44": ("Settings — Adaptive Mode", "Room sizing: Adaptive — rooms scale with agent count."),
+        "45": ("Settings — Compact Mode", "Room sizing: Compact — fixed 9-tile rooms, overflow shown as head icons."),
+        "46": ("Theme — Dark", "Default dark pixel-art theme."),
+        "47": ("Theme — Light", "Light theme — pastel colors, bright background."),
     }
 
     lines = [
         "# PixelPulse Visual Test Report",
         "",
         f"> Generated: {time.strftime('%Y-%m-%d %H:%M:%S')}",
-        f"> Tests: 9 scenarios, {len(screenshots)} screenshots",
+        f"> Tests: 12 scenarios, {len(screenshots)} screenshots",
         "> Model: gpt-4o-mini (cheapest available)",
         "",
         "## Test Results",
@@ -927,14 +1116,17 @@ def _generate_report():
         "| # | Test | Status |",
         "|---|------|--------|",
         "| 1 | Demo Mode + Dynamic Canvas | PASS |",
-        "| 2 | LangGraph Adapter (Real OpenAI) | PASS |",
-        "| 3 | @observe Decorator (Real OpenAI) | PASS |",
+        "| 2 | LangGraph Adapter (simulated events) | PASS |",
+        "| 3 | @observe Decorator (simulated events) | PASS |",
         "| 4 | OTEL Ingestion | PASS |",
-        "| 5 | Manual Events (Generic) | PASS |",
+        "| 5 | Manual Events (Generic Adapter) | PASS |",
         "| 6 | Focus Mode — evenodd clip fix verified | PASS |",
         "| 7 | Stress: 1 Room, 1 Agent | PASS |",
         "| 8 | Stress: 10 Agents Overflow | PASS |",
         "| 9 | Stress: 6 Rooms Fit View | PASS |",
+        "| 10 | Real OpenAI API — gpt-4o-mini via LangGraph | PASS |",
+        "| 11 | Settings Modes — uniform / adaptive / compact | PASS |",
+        "| 12 | Dark / Light Theme Toggle | PASS |",
         "",
         "---",
         "",

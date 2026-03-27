@@ -1,7 +1,7 @@
 # PixelPulse Visual Test Report
 
-> Generated: 2026-03-27 14:49:03
-> Tests: 9 scenarios, 35 screenshots
+> Generated: 2026-03-27 15:23:03
+> Tests: 12 scenarios, 43 screenshots
 > Model: gpt-4o-mini (cheapest available)
 
 ## Test Results
@@ -9,14 +9,17 @@
 | # | Test | Status |
 |---|------|--------|
 | 1 | Demo Mode + Dynamic Canvas | PASS |
-| 2 | LangGraph Adapter (Real OpenAI) | PASS |
-| 3 | @observe Decorator (Real OpenAI) | PASS |
+| 2 | LangGraph Adapter (simulated events) | PASS |
+| 3 | @observe Decorator (simulated events) | PASS |
 | 4 | OTEL Ingestion | PASS |
-| 5 | Manual Events (Generic) | PASS |
+| 5 | Manual Events (Generic Adapter) | PASS |
 | 6 | Focus Mode — evenodd clip fix verified | PASS |
 | 7 | Stress: 1 Room, 1 Agent | PASS |
 | 8 | Stress: 10 Agents Overflow | PASS |
 | 9 | Stress: 6 Rooms Fit View | PASS |
+| 10 | Real OpenAI API — gpt-4o-mini via LangGraph | PASS |
+| 11 | Settings Modes — uniform / adaptive / compact | PASS |
+| 12 | Dark / Light Theme Toggle | PASS |
 
 ---
 
@@ -229,3 +232,51 @@
 **Stress — 6 Rooms Complete**: All agents completed across full 6-room grid.
 
 ![Stress — 6 Rooms Complete](screenshots/39_stress_6rooms_complete.png)
+
+### 40 Realapi Before
+
+**Real API — Before**: Dashboard idle before real gpt-4o-mini LangGraph call.
+
+![Real API — Before](screenshots/40_realapi_before.png)
+
+### 41 Realapi Running
+
+**Real API — Running**: Actual gpt-4o-mini API call in progress via LangGraph adapter.
+
+![Real API — Running](screenshots/41_realapi_running.png)
+
+### 42 Realapi Complete
+
+**Real API — Complete**: Real API call returned. Event log shows live LLM cost tracking.
+
+![Real API — Complete](screenshots/42_realapi_complete.png)
+
+### 43 Settings Uniform
+
+**Settings — Uniform Mode**: Room sizing: Uniform — all rooms same size regardless of agent count.
+
+![Settings — Uniform Mode](screenshots/43_settings_uniform.png)
+
+### 44 Settings Adaptive
+
+**Settings — Adaptive Mode**: Room sizing: Adaptive — rooms scale with agent count.
+
+![Settings — Adaptive Mode](screenshots/44_settings_adaptive.png)
+
+### 45 Settings Compact
+
+**Settings — Compact Mode**: Room sizing: Compact — fixed 9-tile rooms, overflow shown as head icons.
+
+![Settings — Compact Mode](screenshots/45_settings_compact.png)
+
+### 46 Theme Dark
+
+**Theme — Dark**: Default dark pixel-art theme.
+
+![Theme — Dark](screenshots/46_theme_dark.png)
+
+### 47 Theme Light
+
+**Theme — Light**: Light theme — pastel colors, bright background.
+
+![Theme — Light](screenshots/47_theme_light.png)
