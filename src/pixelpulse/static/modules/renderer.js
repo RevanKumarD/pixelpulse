@@ -295,6 +295,8 @@ function _registerFurniture(teamId, items) {
       }
       return { col: i.col - pad, row: i.row - pad, w: w + pad, h: h + pad };
     });
+  // Invalidate BFS walkable grid cache for this room
+  delete _walkableGridCache[teamId];
 }
 
 // Point-vs-AABB: does a point (agent center) overlap any furniture box?
@@ -372,6 +374,96 @@ function _isPathClear(teamId, fromCol, fromRow, toCol, toRow) {
   return true;
 }
 
+// BFS pathfinding — inspired by pablodelucca/pixel-agents tile-grid approach
+// Cache walkable grids per room (furniture is static at runtime)
+const _walkableGridCache = {};
+
+function _buildWalkableGrid(teamId) {
+  const dims = roomDims[teamId] || { cols: 9, rows: 9 };
+  const bounds = getRoomBounds(teamId);
+  const grid = [];
+  for (let r = 0; r < dims.rows; r++) {
+    const row = [];
+    for (let c = 0; c < dims.cols; c++) {
+      const tc = c + 0.5; // tile center in continuous tile coords
+      const tr = r + 0.5;
+      row.push(
+        tc >= bounds.minCol && tc <= bounds.maxCol &&
+        tr >= bounds.minRow && tr <= bounds.maxRow &&
+        !_collidesWithFurniture(teamId, tc, tr)
+      );
+    }
+    grid.push(row);
+  }
+  return grid;
+}
+
+function _getWalkableGrid(teamId) {
+  if (!_walkableGridCache[teamId]) {
+    _walkableGridCache[teamId] = _buildWalkableGrid(teamId);
+  }
+  return _walkableGridCache[teamId];
+}
+
+// 4-connected BFS from continuous position to continuous target.
+// Returns array of { col, row } waypoints (tile centers + exact target at end).
+// Returns [] if no path exists.
+function _findPathBFS(fromCol, fromRow, toCol, toRow, teamId) {
+  const dims = roomDims[teamId] || { cols: 9, rows: 9 };
+  const grid = _getWalkableGrid(teamId);
+
+  const startC = Math.max(0, Math.min(dims.cols - 1, Math.floor(fromCol)));
+  const startR = Math.max(0, Math.min(dims.rows - 1, Math.floor(fromRow)));
+  const endC   = Math.max(0, Math.min(dims.cols - 1, Math.floor(toCol)));
+  const endR   = Math.max(0, Math.min(dims.rows - 1, Math.floor(toRow)));
+
+  if (startC === endC && startR === endR) return [{ col: toCol, row: toRow }];
+
+  const rows = dims.rows, cols = dims.cols;
+  const visited = new Uint8Array(rows * cols);
+  const parentC = new Int8Array(rows * cols).fill(-1);
+  const parentR = new Int8Array(rows * cols).fill(-1);
+
+  const idx = (c, r) => r * cols + c;
+  const queue = [startC, startR]; // flat array for speed
+  visited[idx(startC, startR)] = 1;
+  const DIRS = [[0,-1],[0,1],[-1,0],[1,0]];
+  let found = false;
+  let qi = 0;
+
+  outer: while (qi < queue.length) {
+    const c = queue[qi++], r = queue[qi++];
+    if (c === endC && r === endR) { found = true; break; }
+    for (const [dc, dr] of DIRS) {
+      const nc = c + dc, nr = r + dr;
+      if (nc < 0 || nc >= cols || nr < 0 || nr >= rows) continue;
+      const ni = idx(nc, nr);
+      if (visited[ni] || !grid[nr][nc]) continue;
+      visited[ni] = 1;
+      parentC[ni] = c;
+      parentR[ni] = r;
+      queue.push(nc, nr);
+    }
+  }
+
+  if (!found) return [];
+
+  // Reconstruct path from end back to start
+  const path = [];
+  let c = endC, r = endR;
+  while (!(c === startC && r === startR)) {
+    path.push({ col: c + 0.5, row: r + 0.5 });
+    const ni = idx(c, r);
+    const pc = parentC[ni], pr = parentR[ni];
+    c = pc; r = pr;
+  }
+  path.reverse();
+
+  // Replace final waypoint with exact target position
+  if (path.length > 0) path[path.length - 1] = { col: toCol, row: toRow };
+  return path;
+}
+
 // Idle activities with animation data
 const ACTIVITIES = [
   { name: "stretching",    duration: 120, dirSequence: ["up", "down", "up", "down"] },
@@ -423,39 +515,17 @@ function _pickSafeTarget(teamId) {
 }
 
 function _buildWaypoints(rs) {
-  // L-shaped path with path clearance validation
-  // Try both horizontal-first and vertical-first, pick whichever is clear
+  // BFS pathfinding — finds obstacle-aware route through tile grid
   const target = _pickSafeTarget(rs.roomTeamId);
   rs.targetCol = target.col;
   rs.targetRow = target.row;
 
-  const mid1 = { col: target.col, row: rs.row };   // horizontal first
-  const mid2 = { col: rs.col, row: target.row };    // vertical first
-
-  // Option A: horizontal then vertical
-  const pathA_clear =
-    _isPathClear(rs.roomTeamId, rs.col, rs.row, mid1.col, mid1.row) &&
-    _isPathClear(rs.roomTeamId, mid1.col, mid1.row, target.col, target.row);
-
-  // Option B: vertical then horizontal
-  const pathB_clear =
-    _isPathClear(rs.roomTeamId, rs.col, rs.row, mid2.col, mid2.row) &&
-    _isPathClear(rs.roomTeamId, mid2.col, mid2.row, target.col, target.row);
-
-  if (pathA_clear && pathB_clear) {
-    // Both clear — pick randomly
-    rs.waypoints = Math.random() < 0.5
-      ? [mid1, target] : [mid2, target];
-  } else if (pathA_clear) {
-    rs.waypoints = [mid1, target];
-  } else if (pathB_clear) {
-    rs.waypoints = [mid2, target];
+  const path = _findPathBFS(rs.col, rs.row, target.col, target.row, rs.roomTeamId);
+  if (path.length > 0) {
+    rs.waypoints = path;
   } else {
-    // Neither L-path is clear — try a direct path to a closer safe spot
-    const closer = _pickSafeTarget(rs.roomTeamId);
-    rs.targetCol = closer.col;
-    rs.targetRow = closer.row;
-    rs.waypoints = [closer];
+    // BFS found no path — fall back to direct (collision will slide around obstacles)
+    rs.waypoints = [target];
   }
   rs.waypointIdx = 0;
 }
@@ -582,23 +652,11 @@ function tickRoaming() {
       }
 
       case "returning": {
-        // Build L-path back to desk if we don't have waypoints
+        // BFS path back to desk when waypoints run out
         if (!rs.waypoints.length || rs.waypointIdx >= rs.waypoints.length) {
-          // L-path back: horizontal first, then vertical to desk
-          const midH = { col: rs.deskCol, row: rs.row };
-          const midV = { col: rs.col, row: rs.deskRow };
           const desk = { col: rs.deskCol, row: rs.deskRow };
-          // Try horizontal-first path
-          if (_isPathClear(rs.roomTeamId, rs.col, rs.row, midH.col, midH.row) &&
-              _isPathClear(rs.roomTeamId, midH.col, midH.row, desk.col, desk.row)) {
-            rs.waypoints = [midH, desk];
-          } else if (_isPathClear(rs.roomTeamId, rs.col, rs.row, midV.col, midV.row) &&
-                     _isPathClear(rs.roomTeamId, midV.col, midV.row, desk.col, desk.row)) {
-            rs.waypoints = [midV, desk];
-          } else {
-            // Direct — collision system will slide around obstacles
-            rs.waypoints = [desk];
-          }
+          const path = _findPathBFS(rs.col, rs.row, desk.col, desk.row, rs.roomTeamId);
+          rs.waypoints = path.length > 0 ? path : [desk];
           rs.waypointIdx = 0;
         }
 
@@ -1428,28 +1486,117 @@ function drawRoom(rx, ry, teamId, roomCols, roomRows) {
   const s = TILE_SIZE * zoom;
   const style = getTeamStyle(teamId) || TEAM_STYLES.research;
 
-  // Checkerboard floor
+  // ── Floor: base fill + subtle alternating tile shimmer ──────
+  ctx.fillStyle = style.floor1;
+  ctx.fillRect(rx, ry, roomCols * s, roomRows * s);
+
+  ctx.fillStyle = style.floor2;
   for (let r = 0; r < roomRows; r++) {
     for (let c = 0; c < roomCols; c++) {
-      ctx.fillStyle = (r + c) % 2 === 0 ? style.floor1 : style.floor2;
-      ctx.fillRect(rx + c * s, ry + r * s, s, s);
+      if ((r + c) % 2 === 0) {
+        ctx.fillRect(rx + c * s, ry + r * s, s, s);
+      }
     }
   }
 
-  // Walls
-  ctx.fillStyle = style.wall;
-  ctx.fillRect(rx, ry, roomCols * s, zoom * 4);
-  ctx.fillRect(rx, ry, zoom * 4, roomRows * s);
-  ctx.fillRect(rx + roomCols * s - zoom * 4, ry, zoom * 4, roomRows * s);
-  ctx.fillRect(rx, ry + roomRows * s - zoom * 4, roomCols * s, zoom * 4);
+  // Grout lines: 1px dark grid at tile boundaries (pablodelucca floor pattern)
+  ctx.save();
+  ctx.strokeStyle = "rgba(0,0,0,0.3)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let c = 1; c < roomCols; c++) {
+    const lx = Math.round(rx + c * s) + 0.5;
+    ctx.moveTo(lx, ry);
+    ctx.lineTo(lx, ry + roomRows * s);
+  }
+  for (let r = 1; r < roomRows; r++) {
+    const ly = Math.round(ry + r * s) + 0.5;
+    ctx.moveTo(rx, ly);
+    ctx.lineTo(rx + roomCols * s, ly);
+  }
+  ctx.stroke();
 
-  // Accent glow on top
+  // Sub-tile grid (half-tile lines — very faint texture detail)
+  if (zoom >= 1.0) {
+    const hs = s / 2;
+    ctx.strokeStyle = "rgba(0,0,0,0.08)";
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    for (let c = 0; c < roomCols; c++) {
+      const lx = Math.round(rx + c * s + hs) + 0.5;
+      ctx.moveTo(lx, ry);
+      ctx.lineTo(lx, ry + roomRows * s);
+    }
+    for (let r = 0; r < roomRows; r++) {
+      const ly = Math.round(ry + r * s + hs) + 0.5;
+      ctx.moveTo(rx, ly);
+      ctx.lineTo(rx + roomCols * s, ly);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Center ambient light — radial glow from room accent color
+  {
+    const cx = rx + (roomCols * s) / 2;
+    const cy = ry + (roomRows * s) / 2;
+    const radius = Math.min(roomCols, roomRows) * s * 0.7;
+    const hex = style.accent;
+    const ar = parseInt(hex.slice(1, 3), 16);
+    const ag = parseInt(hex.slice(3, 5), 16);
+    const ab = parseInt(hex.slice(5, 7), 16);
+    const ambGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+    ambGrad.addColorStop(0, `rgba(${ar},${ag},${ab},0.06)`);
+    ambGrad.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = ambGrad;
+    ctx.fillRect(rx, ry, roomCols * s, roomRows * s);
+  }
+
+  // ── Walls ────────────────────────────────────────────────────
+  const wallW = Math.max(3, zoom * 4);
+  ctx.fillStyle = style.wall;
+  ctx.fillRect(rx, ry, roomCols * s, wallW);                          // top
+  ctx.fillRect(rx, ry, wallW, roomRows * s);                           // left
+  ctx.fillRect(rx + roomCols * s - wallW, ry, wallW, roomRows * s);   // right
+  ctx.fillRect(rx, ry + roomRows * s - wallW, roomCols * s, wallW);   // bottom
+
+  // Inner wall shadow — darkening just inside all four walls
+  ctx.save();
+  const shadowW = Math.max(4, zoom * 6);
+  const shadowGradT = ctx.createLinearGradient(rx, ry + wallW, rx, ry + wallW + shadowW);
+  shadowGradT.addColorStop(0, "rgba(0,0,0,0.25)");
+  shadowGradT.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = shadowGradT;
+  ctx.fillRect(rx + wallW, ry + wallW, roomCols * s - wallW * 2, shadowW);
+
+  const shadowGradL = ctx.createLinearGradient(rx + wallW, ry, rx + wallW + shadowW, ry);
+  shadowGradL.addColorStop(0, "rgba(0,0,0,0.2)");
+  shadowGradL.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = shadowGradL;
+  ctx.fillRect(rx + wallW, ry, shadowW, roomRows * s);
+
+  const shadowGradR = ctx.createLinearGradient(rx + roomCols * s - wallW, ry, rx + roomCols * s - wallW - shadowW, ry);
+  shadowGradR.addColorStop(0, "rgba(0,0,0,0.2)");
+  shadowGradR.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = shadowGradR;
+  ctx.fillRect(rx + roomCols * s - wallW - shadowW, ry, shadowW, roomRows * s);
+  ctx.restore();
+
+  // Accent highlight on top wall edge
   ctx.fillStyle = style.accent;
-  ctx.globalAlpha = 0.5;
+  ctx.globalAlpha = 0.55;
   ctx.fillRect(rx, ry, roomCols * s, zoom * 2);
   ctx.globalAlpha = 1;
 
-  // Active stage highlight — subtle glow on the whole room
+  // Baseboard: thin accent strip at bottom of side walls (wainscoting detail)
+  ctx.fillStyle = style.accent;
+  ctx.globalAlpha = 0.18;
+  const baseH = Math.max(2, zoom * 1.5);
+  ctx.fillRect(rx + wallW, ry + roomRows * s - wallW - baseH, roomCols * s - wallW * 2, baseH);
+  ctx.fillRect(rx + wallW, ry + wallW, baseH, roomRows * s - wallW * 2);  // left baseboard
+  ctx.globalAlpha = 1;
+
+  // ── Active stage highlight ───────────────────────────────────
   const pipeline = getPipeline();
   const activeTeam = STAGE_TO_TEAM[pipeline.stage];
   if (activeTeam === teamId) {
