@@ -73,7 +73,6 @@ body {
   height: 44px;
   position: relative;
   z-index: 100;
-  overflow: hidden;
 }
 .topbar__brand { display: flex; align-items: center; gap: 10px; min-width: 0; flex-shrink: 1; overflow: hidden; }
 .topbar__logo {
@@ -353,6 +352,7 @@ body {
 .sidebar__resize:hover::after { background: var(--border-glow); }
 .dashboard--sidebar-collapsed .sidebar { display: none; }
 .dashboard--sidebar-collapsed { grid-template-columns: 1fr 0px; }
+.sidebar--hidden { display: none !important; }
 .sidebar__section { display: flex; flex-direction: column; gap: 6px; }
 .sidebar__heading {
   font-family: var(--font-mono);
@@ -1399,7 +1399,7 @@ body {
   position: absolute;
   top: 100%;
   right: 0;
-  z-index: 50;
+  z-index: 200;
   min-width: 200px;
   background: var(--surface);
   border: 1px solid var(--border-glow);

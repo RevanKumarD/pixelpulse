@@ -56,8 +56,12 @@ import {
 import { get as getSetting, onChange as onSettingChange } from "./settings.js";
 import { getCanvasColors } from "./theme.js";
 
-// ---- Animation speed (controlled by settings) ----
+// ---- Settings-controlled variables ----
 let animSpeed = 1.0;
+let fontScale = 1.0;    // 0.75 – 1.5, multiplied into every font size
+
+/** Scale a font size by the user's fontScale setting. */
+function fs(base) { return Math.round(base * fontScale); }
 
 // ---- roundRect polyfill for older browsers ----
 if (!CanvasRenderingContext2D.prototype.roundRect) {
@@ -1000,15 +1004,51 @@ export function init() {
     }
   });
 
-  // Animation speed from settings
+  // ---- Wire all settings ----
   animSpeed = getSetting("animationSpeed") ?? 1.0;
   onSettingChange("animationSpeed", (v) => { animSpeed = v; });
+
+  fontScale = getSetting("fontScale") ?? 1.0;
+  onSettingChange("fontScale", (v) => { fontScale = v; });
 
   // Build initial layout and subscribe to layout-affecting settings
   rebuildLayout();
   resize();
   onSettingChange("roomSizing", () => { rebuildLayout(); resize(); });
   onSettingChange("orchestratorVisible", () => { rebuildLayout(); resize(); });
+
+  // Scanlines toggle
+  const scanlinesEl = document.querySelector(".scanlines");
+  if (scanlinesEl) {
+    scanlinesEl.style.display = getSetting("scanlinesEnabled") ? "" : "none";
+    onSettingChange("scanlinesEnabled", (v) => { scanlinesEl.style.display = v ? "" : "none"; });
+  }
+
+  // Canvas smoothing
+  const applySmoothing = (v) => { ctx.imageSmoothingEnabled = !!v; };
+  applySmoothing(getSetting("canvasSmoothing"));
+  onSettingChange("canvasSmoothing", applySmoothing);
+
+  // Zoom level from settings (initial + updates)
+  const settingZoom = getSetting("zoomLevel");
+  if (settingZoom != null) userZoom = settingZoom;
+  onSettingChange("zoomLevel", (v) => { userZoom = v; zoom = baseZoom * userZoom; });
+
+  // Sidebar visibility
+  const sidebarEl = document.querySelector(".sidebar");
+  if (sidebarEl) {
+    if (!getSetting("sidebarVisible")) sidebarEl.classList.add("sidebar--hidden");
+    onSettingChange("sidebarVisible", (v) => {
+      sidebarEl.classList.toggle("sidebar--hidden", !v);
+      requestAnimationFrame(() => resize());
+    });
+  }
+
+  // Bottom bar height
+  const root = document.documentElement;
+  const applyBottomH = (v) => { root.style.setProperty("--bottom-h", v + "px"); requestAnimationFrame(() => resize()); };
+  applyBottomH(getSetting("bottomBarHeight") ?? 220);
+  onSettingChange("bottomBarHeight", applyBottomH);
 
   // Log filter inputs trigger re-render on change
   for (const id of ["events-search", "events-team-filter"]) {
@@ -1429,7 +1469,7 @@ function render() {
         break;
       }
       case "overflow-badge": {
-        const fontSize = Math.max(10, Math.round(10 * zoom * 0.6));
+        const fontSize = fs(Math.max(8, Math.round(9 * zoom * 0.55)));
         ctx.save();
         ctx.font = `600 ${fontSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
         ctx.fillStyle = "#94a3b8";
@@ -1618,8 +1658,8 @@ function drawRoomLabel(rx, ry, team, teamId, roomCols) {
   const activeCount = agentStates.filter(a => a.status === "active").length;
   const totalCount = agentStates.length;
 
-  // Department name — big, readable
-  const nameSize = Math.max(13, Math.round(14 * zoom * 0.7));
+  // Department name — readable but compact
+  const nameSize = fs(Math.max(11, Math.round(12 * zoom * 0.65)));
   ctx.save();
   ctx.font = `700 ${nameSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
   ctx.textAlign = "center";
@@ -1647,7 +1687,7 @@ function drawRoomLabel(rx, ry, team, teamId, roomCols) {
   ctx.fillText(text, cx, cy);
 
   // Activity counter badge — "2/4 active" to the right of the label
-  const badgeSize = Math.max(10, Math.round(10 * zoom * 0.6));
+  const badgeSize = fs(Math.max(8, Math.round(9 * zoom * 0.55)));
   ctx.font = `700 ${badgeSize}px "JetBrains Mono", monospace`;
   const badgeText = `${activeCount}/${totalCount}`;
   const badgeW = ctx.measureText(badgeText).width + badgeSize * 1.2;
@@ -1670,7 +1710,7 @@ function drawRoomLabel(rx, ry, team, teamId, roomCols) {
   ctx.fillText(badgeText, badgeX + badgeW / 2, cy);
 
   // Role subtitle
-  const roleSize = Math.max(11, Math.round(11 * zoom * 0.6));
+  const roleSize = fs(Math.max(8, Math.round(9 * zoom * 0.5)));
   ctx.font = `${roleSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
   ctx.textAlign = "center";
   ctx.fillStyle = "#64748b";
@@ -1823,7 +1863,7 @@ function drawFocusOverlay(focusedTeamId, offsetX, offsetY, s, orchOffset) {
 
   // Hint text: "ESC or 0 to return"
   ctx.save();
-  const hintSize = Math.max(11, Math.round(zoom * 4));
+  const hintSize = fs(Math.max(9, Math.round(zoom * 3.5)));
   ctx.font = `${hintSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "top";
@@ -1940,7 +1980,7 @@ function drawOrchestratorZone(offsetX, offsetY, totalW, s) {
   ctx.stroke();
 
   // ---- Orchestrator title ----
-  const titleSize = Math.max(13, Math.round(13 * zoom * 0.65));
+  const titleSize = fs(Math.max(10, Math.round(11 * zoom * 0.55)));
   ctx.font = `700 ${titleSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -1984,7 +2024,7 @@ function drawOrchestratorZone(offsetX, offsetY, totalW, s) {
   }
 
   // Draw stage nodes
-  const labelSize = Math.max(10, Math.round(10 * zoom * 0.55));
+  const labelSize = fs(Math.max(8, Math.round(9 * zoom * 0.5)));
   ctx.textBaseline = "top";
   ctx.font = `600 ${labelSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
 
@@ -2067,7 +2107,7 @@ function drawOrchestratorZone(offsetX, offsetY, totalW, s) {
 
   // ---- Orchestrator message at bottom ----
   if (orch.message) {
-    const msgSize = Math.max(10, Math.round(10 * zoom * 0.55));
+    const msgSize = fs(Math.max(8, Math.round(9 * zoom * 0.5)));
     ctx.font = `${msgSize}px "JetBrains Mono", monospace`;
     ctx.fillStyle = "#64748b";
     ctx.textAlign = "center";
@@ -2313,7 +2353,7 @@ function drawAgent(x, y, agentName, teamId, roaming) {
     if (isRunning) {
       const cx = Math.round(x) + cached.width / 2;
       const cy = Math.round(drawY);
-      const markSize = Math.max(10, Math.round(zoom * 5));
+      const markSize = fs(Math.max(9, Math.round(zoom * 4.2)));
 
       // Exclamation mark above head — bouncing
       ctx.save();
@@ -2350,7 +2390,7 @@ function drawAgent(x, y, agentName, teamId, roaming) {
 
     // Error exclamation mark overlay
     if (agent.status === "error") {
-      const errSize = Math.max(10, Math.round(zoom * 5));
+      const errSize = fs(Math.max(9, Math.round(zoom * 4.2)));
       ctx.save();
       ctx.font = `900 ${errSize}px "JetBrains Mono", monospace`;
       ctx.textAlign = "center";
@@ -2389,8 +2429,8 @@ function drawAgent(x, y, agentName, teamId, roaming) {
 
   if (agent.status === "active" || agent.status === "waiting") {
     // ---- Active/Waiting: draw a mini status card to the right ----
-    const cardNameSize = Math.max(10, Math.round(zoom * 5));
-    const cardTaskSize = Math.max(9, Math.round(zoom * 4));
+    const cardNameSize = fs(Math.max(9, Math.round(zoom * 4.2)));
+    const cardTaskSize = fs(Math.max(8, Math.round(zoom * 3.5)));
     ctx.font = `700 ${cardNameSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
     const nameW = ctx.measureText(displayName).width;
 
@@ -2443,7 +2483,7 @@ function drawAgent(x, y, agentName, teamId, roaming) {
     ctx.shadowBlur = 0;
   } else {
     // ---- Idle/error: compact name label to the right (wraps if 2+ words) ----
-    const nameSize = Math.max(10, Math.round(zoom * 5));
+    const nameSize = fs(Math.max(9, Math.round(zoom * 4.2)));
     ctx.font = `600 ${nameSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
     ctx.fillStyle = agent.status === "error" ? "#f85149" : "#e2e8f0";
     const words = displayName.split(" ");
@@ -2504,10 +2544,10 @@ function drawAllBubbles() {
 }
 
 function drawWordWrappedBubble(x, y, text, type, alpha) {
-  const fontSize = Math.max(11, Math.round(zoom * 5));
-  const maxWidth = Math.max(130, zoom * 62);
-  const lineHeight = fontSize * 1.4;
-  const padding = Math.max(6, zoom * 3.5);
+  const fontSize = fs(Math.max(9, Math.round(zoom * 4.2)));
+  const maxWidth = Math.max(110, zoom * 55);
+  const lineHeight = fontSize * 1.35;
+  const padding = Math.max(5, zoom * 3);
   const cornerRadius = Math.max(5, zoom * 3);
 
   ctx.save();
