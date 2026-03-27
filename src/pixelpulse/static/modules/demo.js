@@ -50,12 +50,41 @@ function generateScript() {
   const teamEntries = Object.entries(TEAMS);
   const script = [];
 
-  // If no config loaded, return a minimal idle script
-  if (teamEntries.length === 0 || PIPELINE_STAGES.length === 0) {
+  // If no teams at all, return a minimal idle script
+  if (teamEntries.length === 0) {
     script.push({
       type: "orchestrator", status: "idle", stage: "",
       message: "No configuration loaded — connect to a PixelPulse server to see agents"
     });
+    return script;
+  }
+
+  // If no pipeline stages defined, generate a demo by cycling through all teams
+  if (PIPELINE_STAGES.length === 0) {
+    script.push({ type: "orchestrator", status: "active", stage: "", message: "Agents on standby — awaiting next pipeline run..." });
+    script.push({ type: "orchestrator", status: "active", stage: "", message: "New trigger detected — preparing pipeline run" });
+    for (let ti = 0; ti < teamEntries.length; ti++) {
+      const [teamId, team] = teamEntries[ti];
+      const teamLabel = team.label || _capitalize(teamId);
+      const agents = team.agents || [];
+      script.push({ type: "orchestrator", status: "active", stage: teamId, message: `Advancing to ${teamLabel} — ${team.role || "processing"}` });
+      script.push({ type: "pipeline", stage: teamId });
+      for (let ai = 0; ai < agents.length; ai++) {
+        const agentName = agents[ai];
+        const label = _agentLabel(agentName);
+        script.push({ type: "agent_active", agent: agentName, thinking: `${label} processing tasks...` });
+        script.push({ type: "agent_done", agent: agentName, thinking: `${label} completed — results ready` });
+        const nextAgent = ai < agents.length - 1 ? agents[ai + 1]
+          : ti < teamEntries.length - 1 ? (teamEntries[ti + 1][1].agents || [])[0] : null;
+        if (nextAgent) {
+          script.push({ type: "flow", from: agentName, to: nextAgent, content: `Results from ${label}`, tag: _inferTag(teamId, ai) });
+        }
+      }
+      if (agents.length > 0) {
+        script.push({ type: "cost", agent: agents[agents.length - 1], amount: 0.003 + Math.random() * 0.02 });
+      }
+    }
+    script.push({ type: "orchestrator", status: "idle", stage: "", message: "Pipeline run complete — all stages finished" });
     return script;
   }
 

@@ -114,7 +114,7 @@ function computeGrid(teamCount) {
  * Returns tile count (7, 9, 12, or 14).
  */
 function computeRoomSize(agentCount, mode) {
-  if (mode === 'compact') return 9;  // fixed size, overflow agents as icons
+  if (mode === 'compact') return 7;  // always small — overflow icons for extras
   if (agentCount <= 2) return 9;
   if (agentCount <= 4) return 12;
   if (agentCount <= 8) return 14;
@@ -1703,8 +1703,8 @@ function drawFlowConnectors(offsetX, offsetY, s, orchOffset) {
   if (pipelineTeams.length < 2) return;
 
   ctx.save();
-  ctx.setLineDash([Math.max(3, zoom * 2), Math.max(3, zoom * 2)]);
-  ctx.lineWidth = Math.max(1, zoom * 0.5);
+  ctx.setLineDash([Math.max(4, zoom * 3), Math.max(3, zoom * 2)]);
+  ctx.lineWidth = Math.max(1.5, zoom * 0.8);
 
   for (let i = 0; i < pipelineTeams.length - 1; i++) {
     const fromId = pipelineTeams[i];
@@ -1718,7 +1718,7 @@ function drawFlowConnectors(offsetX, offsetY, s, orchOffset) {
     const r = parseInt(hex.substring(0, 2), 16);
     const g = parseInt(hex.substring(2, 4), 16);
     const b = parseInt(hex.substring(4, 6), 16);
-    ctx.strokeStyle = `rgba(${r},${g},${b},0.3)`;
+    ctx.strokeStyle = `rgba(${r},${g},${b},0.55)`;
     ctx.globalAlpha = 1;
 
     const sameRow = Math.abs(fromCenter.cy - toCenter.cy) < s * 2;
@@ -1738,16 +1738,18 @@ function drawFlowConnectors(offsetX, offsetY, s, orchOffset) {
     const endAngle = sameRow
       ? Math.atan2(toCenter.cy - fromCenter.cy, toCenter.cx - fromCenter.cx)
       : Math.atan2(toCenter.cy - fromCenter.cy, 0);
-    const arrowLen = Math.max(6, zoom * 3);
-    ctx.globalAlpha = 0.5;
+    const arrowLen = Math.max(8, zoom * 4);
+    ctx.globalAlpha = 0.75;
+    ctx.lineWidth = Math.max(1.5, zoom * 0.9);
     ctx.setLineDash([]);
     ctx.beginPath();
     ctx.moveTo(toCenter.cx, toCenter.cy);
-    ctx.lineTo(toCenter.cx - arrowLen * Math.cos(endAngle - Math.PI / 7), toCenter.cy - arrowLen * Math.sin(endAngle - Math.PI / 7));
+    ctx.lineTo(toCenter.cx - arrowLen * Math.cos(endAngle - Math.PI / 6), toCenter.cy - arrowLen * Math.sin(endAngle - Math.PI / 6));
     ctx.moveTo(toCenter.cx, toCenter.cy);
-    ctx.lineTo(toCenter.cx - arrowLen * Math.cos(endAngle + Math.PI / 7), toCenter.cy - arrowLen * Math.sin(endAngle + Math.PI / 7));
+    ctx.lineTo(toCenter.cx - arrowLen * Math.cos(endAngle + Math.PI / 6), toCenter.cy - arrowLen * Math.sin(endAngle + Math.PI / 6));
     ctx.stroke();
-    ctx.setLineDash([Math.max(3, zoom * 2), Math.max(3, zoom * 2)]);
+    ctx.lineWidth = Math.max(1.5, zoom * 0.8);
+    ctx.setLineDash([Math.max(4, zoom * 3), Math.max(3, zoom * 2)]);
     ctx.globalAlpha = 1;
   }
 
@@ -2503,16 +2505,20 @@ function drawAllBubbles() {
 
 function drawWordWrappedBubble(x, y, text, type, alpha) {
   const fontSize = Math.max(11, Math.round(zoom * 5));
-  const maxWidth = Math.max(120, zoom * 60);
-  const lineHeight = fontSize * 1.3;
-  const padding = zoom * 3;
+  const maxWidth = Math.max(130, zoom * 62);
+  const lineHeight = fontSize * 1.4;
+  const padding = Math.max(6, zoom * 3.5);
+  const cornerRadius = Math.max(5, zoom * 3);
 
   ctx.save();
   ctx.globalAlpha = alpha;
   ctx.font = `${fontSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
 
+  // Collapse newlines/tabs into spaces so they don't render as glyph boxes
+  const cleanText = text.replace(/[\n\r\t]+/g, " ").replace(/\s{2,}/g, " ").trim();
+
   // Word wrap
-  const words = text.split(" ");
+  const words = cleanText.split(" ");
   const lines = [];
   let currentLine = "";
   for (const word of words) {
@@ -2535,53 +2541,65 @@ function drawWordWrappedBubble(x, y, text, type, alpha) {
   const bw = maxLineW + padding * 2;
   const bh = lines.length * lineHeight + padding * 2;
   const bx = x - bw / 2;
-  const by = y - bh - zoom * 4;
+  const by = y - bh - zoom * 5;
 
-  // Bubble background
   const colors = {
-    thinking: { bg: "#111827", border: "#00d4ff", text: "#dbeafe" },
-    receiving: { bg: "#1a0c20", border: "#ff6ec7", text: "#fce7f3" },
-    done: { bg: "#0c1a10", border: "#39ff14", text: "#dcfce7" },
-    error: { bg: "#1a0808", border: "#f85149", text: "#fecaca" },
+    thinking: { bg: "#0d1b2a", border: "#00d4ff", text: "#e0f2fe", glow: "rgba(0,212,255,0.18)" },
+    receiving: { bg: "#1a0c20", border: "#ff6ec7", text: "#fce7f3", glow: "rgba(255,110,199,0.18)" },
+    done:      { bg: "#0a1e10", border: "#39ff14", text: "#dcfce7", glow: "rgba(57,255,20,0.15)" },
+    error:     { bg: "#1a0808", border: "#f85149", text: "#fecaca", glow: "rgba(248,81,73,0.18)" },
   };
   const c = colors[type] || colors.thinking;
 
-  ctx.fillStyle = c.bg;
-  ctx.globalAlpha = alpha * 0.92;
+  // Glow halo behind bubble
+  ctx.globalAlpha = alpha * 0.35;
+  ctx.fillStyle = c.glow;
   ctx.beginPath();
-  ctx.roundRect(bx, by, bw, bh, zoom * 2);
+  ctx.roundRect(bx - 3, by - 3, bw + 6, bh + 6, cornerRadius + 3);
+  ctx.fill();
+
+  // Bubble background
+  ctx.globalAlpha = alpha * 0.94;
+  ctx.fillStyle = c.bg;
+  ctx.beginPath();
+  ctx.roundRect(bx, by, bw, bh, cornerRadius);
   ctx.fill();
 
   // Border
   ctx.strokeStyle = c.border;
-  ctx.lineWidth = Math.max(1, zoom * 0.8);
-  ctx.globalAlpha = alpha * 0.85;
+  ctx.lineWidth = Math.max(1.5, zoom * 0.9);
+  ctx.globalAlpha = alpha * 0.9;
   ctx.stroke();
 
-  // Tail
+  // Tail (small triangle pointing down from bubble center)
+  const tailW = Math.max(5, zoom * 4);
+  const tailH = Math.max(4, zoom * 3.5);
+  ctx.globalAlpha = alpha * 0.94;
   ctx.fillStyle = c.bg;
-  ctx.globalAlpha = alpha * 0.92;
   ctx.beginPath();
-  ctx.moveTo(x - zoom * 3, by + bh);
-  ctx.lineTo(x, by + bh + zoom * 4);
-  ctx.lineTo(x + zoom * 3, by + bh);
+  ctx.moveTo(x - tailW, by + bh);
+  ctx.lineTo(x, by + bh + tailH);
+  ctx.lineTo(x + tailW, by + bh);
   ctx.fill();
+  // Tail border outline
+  ctx.strokeStyle = c.border;
+  ctx.lineWidth = Math.max(1.5, zoom * 0.9);
+  ctx.globalAlpha = alpha * 0.9;
+  ctx.beginPath();
+  ctx.moveTo(x - tailW, by + bh);
+  ctx.lineTo(x, by + bh + tailH);
+  ctx.lineTo(x + tailW, by + bh);
+  ctx.stroke();
 
   // Text lines
   ctx.globalAlpha = alpha;
   ctx.fillStyle = c.text;
   ctx.textBaseline = "top";
   ctx.textAlign = "left";
+  ctx.font = `${fontSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
   for (let i = 0; i < lines.length; i++) {
     ctx.fillText(lines[i], bx + padding, by + padding + i * lineHeight);
   }
-
-  // Type indicator
-  const icons = { thinking: "💭", receiving: "📨", done: "✓", error: "⚠" };
-  ctx.font = `${fontSize - 1}px monospace`;
-  ctx.fillStyle = c.border;
-  ctx.textAlign = "right";
-  ctx.fillText(icons[type] || "", bx + bw - padding * 0.5, by + padding * 0.3);
 
   ctx.restore();
 }
