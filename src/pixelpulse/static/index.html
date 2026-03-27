@@ -219,6 +219,22 @@
             <input type="range" data-setting="zoomLevel" min="0.5" max="3" step="0.25">
             <output data-output="zoomLevel">1.0x</output>
           </label>
+          <label class="settings-field">
+            <span class="settings-field__label">Room Sizing</span>
+            <select data-setting="roomSizing" class="settings-select">
+              <option value="uniform">Uniform</option>
+              <option value="adaptive">Adaptive</option>
+              <option value="compact">Compact Overflow</option>
+            </select>
+          </label>
+          <label class="settings-field settings-field--toggle">
+            <span class="settings-field__label">Show Flow Connectors</span>
+            <input type="checkbox" data-setting="showConnectors">
+          </label>
+          <label class="settings-field settings-field--toggle">
+            <span class="settings-field__label">Orchestrator Visible</span>
+            <input type="checkbox" data-setting="orchestratorVisible">
+          </label>
           <fieldset class="settings-field settings-field--group">
             <legend class="settings-field__label">Sidebar Sections</legend>
             <label class="settings-check"><input type="checkbox" data-setting="sidebarSections.pipeline"> Pipeline</label>

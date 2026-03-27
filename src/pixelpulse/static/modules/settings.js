@@ -27,6 +27,9 @@ const DEFAULTS = Object.freeze({
   sidebarVisible: true,       // boolean
   bottomBarHeight: 220,       // 80 – 400px
   zoomLevel: 1.0,             // 0.5 – 3.0, step 0.25
+  roomSizing: 'uniform',      // 'uniform' | 'adaptive' | 'compact'
+  showConnectors: false,       // flow connector overlay
+  orchestratorVisible: true,   // show/hide orchestrator zone
   sidebarSections: Object.freeze({
     pipeline: true,
     agents: true,
