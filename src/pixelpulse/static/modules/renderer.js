@@ -2387,8 +2387,8 @@ function drawAgent(x, y, agentName, teamId, roaming) {
 
   if (agent.status === "active" || agent.status === "waiting") {
     // ---- Active/Waiting: draw a mini status card to the right ----
-    const cardNameSize = Math.max(11, Math.round(zoom * 4.5));
-    const cardTaskSize = Math.max(10, Math.round(zoom * 3.5));
+    const cardNameSize = Math.max(13, Math.round(zoom * 5));
+    const cardTaskSize = Math.max(11, Math.round(zoom * 4));
     ctx.font = `700 ${cardNameSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
     const nameW = ctx.measureText(displayName).width;
 
@@ -2425,7 +2425,7 @@ function drawAgent(x, y, agentName, teamId, roaming) {
     // Task text
     if (taskText) {
       ctx.font = `${cardTaskSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
-      ctx.fillStyle = "#94a3b8";
+      ctx.fillStyle = "#cbd5e1";
       ctx.fillText(taskText, cardX + cardPadX + zoom * 1.5, cardY + cardPadY + cardNameSize + 2);
     }
 
@@ -2441,9 +2441,9 @@ function drawAgent(x, y, agentName, teamId, roaming) {
     ctx.shadowBlur = 0;
   } else {
     // ---- Idle/error: compact name label to the right (wraps if 2+ words) ----
-    const nameSize = Math.max(11, Math.round(zoom * 4));
+    const nameSize = Math.max(12, Math.round(zoom * 5));
     ctx.font = `600 ${nameSize}px system-ui, -apple-system, "Segoe UI", sans-serif`;
-    ctx.fillStyle = agent.status === "error" ? "#f85149" : "#475569";
+    ctx.fillStyle = agent.status === "error" ? "#f85149" : "#94a3b8";
     const words = displayName.split(" ");
     const maxLabelW = zoom * 28;
     let lines = [];
@@ -2502,8 +2502,8 @@ function drawAllBubbles() {
 }
 
 function drawWordWrappedBubble(x, y, text, type, alpha) {
-  const fontSize = Math.max(12, Math.round(zoom * 4));
-  const maxWidth = Math.max(140, zoom * 65);
+  const fontSize = Math.max(14, Math.round(zoom * 5));
+  const maxWidth = Math.max(160, zoom * 72);
   const lineHeight = fontSize * 1.3;
   const padding = zoom * 3;
 
@@ -2539,10 +2539,10 @@ function drawWordWrappedBubble(x, y, text, type, alpha) {
 
   // Bubble background
   const colors = {
-    thinking: { bg: "#111827", border: "#00d4ff", text: "#c8dbe6" },
-    receiving: { bg: "#1a0c20", border: "#ff6ec7", text: "#e8c8d8" },
-    done: { bg: "#0c1a10", border: "#39ff14", text: "#c8e8c8" },
-    error: { bg: "#1a0808", border: "#f85149", text: "#f8c8c8" },
+    thinking: { bg: "#111827", border: "#00d4ff", text: "#dbeafe" },
+    receiving: { bg: "#1a0c20", border: "#ff6ec7", text: "#fce7f3" },
+    done: { bg: "#0c1a10", border: "#39ff14", text: "#dcfce7" },
+    error: { bg: "#1a0808", border: "#f85149", text: "#fecaca" },
   };
   const c = colors[type] || colors.thinking;
 
@@ -2554,8 +2554,8 @@ function drawWordWrappedBubble(x, y, text, type, alpha) {
 
   // Border
   ctx.strokeStyle = c.border;
-  ctx.lineWidth = zoom * 0.6;
-  ctx.globalAlpha = alpha * 0.7;
+  ctx.lineWidth = Math.max(1, zoom * 0.8);
+  ctx.globalAlpha = alpha * 0.85;
   ctx.stroke();
 
   // Tail

@@ -1,5 +1,5 @@
 /**
- * Sprite System — ported from AgentRoom
+ * Sprite System
  *
  * Loads 6 character PNG sprite sheets (16x32, 7 frames, 3 directions).
  * Defines inline furniture pixel data (desk, monitor, plant, bookshelf, chair).
