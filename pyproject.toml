@@ -52,10 +52,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/pixelpulse-ai/pixelpulse"
-Documentation = "https://pixelpulse.dev"
-Repository = "https://github.com/pixelpulse-ai/pixelpulse"
-Issues = "https://github.com/pixelpulse-ai/pixelpulse/issues"
+Homepage = "https://github.com/RevanKumarD/pixelpulse"
+Documentation = "https://github.com/RevanKumarD/pixelpulse#readme"
+Repository = "https://github.com/RevanKumarD/pixelpulse"
+Issues = "https://github.com/RevanKumarD/pixelpulse/issues"
 
 [project.scripts]
 pixelpulse = "pixelpulse.cli:main"

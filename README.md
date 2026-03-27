@@ -5,7 +5,7 @@ Real-time pixel-art dashboard for multi-agent systems. Production observability 
 [![PyPI version](https://img.shields.io/pypi/v/pixelpulse.svg)](https://pypi.org/project/pixelpulse/)
 [![Python](https://img.shields.io/pypi/pyversions/pixelpulse.svg)](https://pypi.org/project/pixelpulse/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![CI](https://github.com/revan-ar/pixelpulse/actions/workflows/ci.yml/badge.svg)](https://github.com/revan-ar/pixelpulse/actions/workflows/ci.yml)
+[![CI](https://github.com/RevanKumarD/pixelpulse/actions/workflows/ci.yml/badge.svg)](https://github.com/RevanKumarD/pixelpulse/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/tests-333%20passing-brightgreen.svg)](tests/)
 
 ![Dashboard Overview](tests/visual/screenshots/01_dashboard_idle.png)
