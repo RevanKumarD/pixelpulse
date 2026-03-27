@@ -32,6 +32,11 @@ const state = {
   bubbles: [],           // { id, agent, text, type, createdAt, duration }
   particles: [],         // { id, fromAgent, toAgent, progress, color, content }
   connection: "disconnected",
+
+  // Dynamic canvas state
+  focusedRoom: null,          // teamId of focused room, or null
+  collapsedRooms: new Set(),  // Set of collapsed teamId strings
+  hiddenTeams: new Set(),     // Set of hidden teamId strings (team filter)
 };
 
 /**
@@ -88,6 +93,15 @@ export async function loadConfig() {
       `${Object.keys(state.agents).length} agents, ` +
       `${PIPELINE_STAGES.length} pipeline stages`
     );
+
+    // Restore persisted collapsed rooms
+    try {
+      const saved = localStorage.getItem('pixelpulse-collapsed');
+      if (saved) {
+        const ids = JSON.parse(saved);
+        for (const id of ids) state.collapsedRooms.add(id);
+      }
+    } catch { /* ignore corrupt data */ }
   } catch (err) {
     console.error("[State] Failed to load config from /api/config:", err);
     // Leave registries empty — dashboard will show a blank state
@@ -395,4 +409,42 @@ export function getEventsForAgent(name) {
 export function getCostForAgent(name) {
   const agent = getAgent(name);
   return agent?.cost || 0;
+}
+
+// ---- Focus Mode ----
+
+export function getFocusedRoom() { return state.focusedRoom; }
+
+export function setFocusedRoom(teamId) {
+  const prev = state.focusedRoom;
+  state.focusedRoom = teamId;
+  notify("focusChanged", { teamId, prev });
+}
+
+// ---- Collapsed Rooms ----
+
+export function isRoomCollapsed(teamId) { return state.collapsedRooms.has(teamId); }
+
+export function toggleRoomCollapsed(teamId) {
+  if (state.collapsedRooms.has(teamId)) {
+    state.collapsedRooms.delete(teamId);
+  } else {
+    state.collapsedRooms.add(teamId);
+  }
+  // Persist to localStorage
+  localStorage.setItem('pixelpulse-collapsed', JSON.stringify([...state.collapsedRooms]));
+  notify("roomCollapsed", { teamId, collapsed: state.collapsedRooms.has(teamId) });
+}
+
+// ---- Hidden Teams (Filter) ----
+
+export function isTeamHidden(teamId) { return state.hiddenTeams.has(teamId); }
+
+export function setHiddenTeams(teamIds) {
+  state.hiddenTeams = new Set(teamIds);
+  notify("teamsFiltered", { hidden: [...state.hiddenTeams] });
+}
+
+export function getVisibleTeamIds() {
+  return Object.keys(TEAMS).filter(id => !state.hiddenTeams.has(id));
 }
