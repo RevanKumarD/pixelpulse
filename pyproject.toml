@@ -43,7 +43,8 @@ otel = [
     "opentelemetry-api>=1.20.0",
     "opentelemetry-sdk>=1.20.0",
 ]
-all = ["pixelpulse[crewai,langgraph,openai,autogen,otel]"]
+plugin = ["httpx>=0.24.0", "mcp>=1.0.0"]
+all = ["pixelpulse[crewai,langgraph,openai,autogen,otel,plugin]"]
 dev = [
     "pytest>=7.0",
     "pytest-asyncio>=0.21.0",
