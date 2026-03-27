@@ -277,6 +277,11 @@ body {
   transform: scale(0.92);
   background: var(--border);
 }
+.canvas-ctrl--active {
+  background: var(--accent);
+  color: var(--bg);
+  box-shadow: 0 0 6px var(--accent);
+}
 .canvas-ctrl--label {
   font-size: 11px;
   letter-spacing: 0.5px;

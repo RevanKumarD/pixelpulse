@@ -260,6 +260,7 @@ let userZoom = 1;     // user's manual zoom multiplier
 let panX = 0, panY = 0;  // pan offset in pixels
 let isPanning = false;
 let panStartX = 0, panStartY = 0;
+let panModeActive = false;  // toggled by Pan button — enables left-click drag panning
 let tick = 0;
 let hoveredAgent = null;
 let mouseX = 0, mouseY = 0;
@@ -947,12 +948,13 @@ export function init() {
     zoom = baseZoom * userZoom;
   }, { passive: false });
 
-  // Pan — middle-click or shift+click drag
+  // Pan — middle-click, shift+click drag, or left-click when pan mode is active
   canvas.addEventListener("mousedown", (e) => {
-    if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
+    if (e.button === 1 || (e.button === 0 && e.shiftKey) || (e.button === 0 && panModeActive)) {
       isPanning = true;
       panStartX = e.clientX - panX;
       panStartY = e.clientY - panY;
+      canvas.style.cursor = "grabbing";
       e.preventDefault();
     }
   });
@@ -962,7 +964,10 @@ export function init() {
       panY = e.clientY - panStartY;
     }
   });
-  window.addEventListener("mouseup", () => { isPanning = false; });
+  window.addEventListener("mouseup", () => {
+    isPanning = false;
+    canvas.style.cursor = panModeActive ? "grab" : "";
+  });
 
   // Double-click: focus on room under cursor, or fit view if outside rooms or already focused
   canvas.addEventListener("dblclick", (e) => {
@@ -1142,6 +1147,15 @@ export function resetView() {
   panX = 0;
   panY = 0;
   zoom = baseZoom * userZoom;
+}
+
+/** Toggle pan mode — when active, left-click drag pans the canvas */
+export function togglePanMode() {
+  panModeActive = !panModeActive;
+  const btn = document.getElementById("ctrl-pan");
+  if (btn) btn.classList.toggle("canvas-ctrl--active", panModeActive);
+  canvas.style.cursor = panModeActive ? "grab" : "";
+  return panModeActive;
 }
 
 /** Pan camera to center on a team room */
