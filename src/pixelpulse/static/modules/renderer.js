@@ -70,12 +70,131 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
 }
 
 // ---- Layout Constants ----
-const ROOM_COLS = 9;
-const ROOM_ROWS = 9;
-const ROOM_GAP = 3;          // tiles gap (center = orchestrator zone)
-const ROOMS_PER_ROW = 2;
+const ROOM_GAP = 3;          // tiles gap between rooms
 const SITTING_OFFSET = 12;
 const ORCH_ROWS = 3;         // orchestrator zone height in tiles
+
+// Content padding (tiles on each side of the room grid)
+const PAD_TOP = 3;      // room labels above top rooms
+const PAD_BOTTOM = 4;   // agents/chairs below bottom rooms + orchestrator text
+const PAD_LEFT = 1;
+const PAD_RIGHT = 5;    // agent name cards to the right
+
+// ---- Dynamic Layout Engine ----
+// Mutable layout state — recomputed by rebuildLayout()
+let gridCols = 2;            // number of room columns
+let gridRows = 2;            // number of room rows
+let roomDims = {};            // { teamId: { cols, rows } }  per-room dimensions
+let maxRoomCols = 9;          // widest room in grid (for column alignment)
+let maxRoomRows = 9;          // tallest room in grid (for row alignment)
+let CONTENT_TILES_W = 30;    // recomputed by rebuildLayout()
+let CONTENT_TILES_H = 28;    // recomputed by rebuildLayout()
+let layoutTeamOrder = [];     // ordered team IDs for grid placement
+
+/**
+ * Compute grid dimensions from team count.
+ * Returns { cols, rows } where cols * rows >= teamCount.
+ */
+function computeGrid(teamCount) {
+  if (teamCount <= 0) return { cols: 1, rows: 1 };
+  const cols = Math.ceil(Math.sqrt(teamCount));
+  const rows = Math.ceil(teamCount / cols);
+  return { cols, rows };
+}
+
+/**
+ * Compute room tile dimensions based on agent count and sizing mode.
+ * Returns tile count (7, 9, 12, or 14).
+ */
+function computeRoomSize(agentCount, mode) {
+  if (mode === 'compact') return 9;  // fixed size, overflow agents as icons
+  if (agentCount <= 2) return 7;
+  if (agentCount <= 4) return 9;
+  if (agentCount <= 8) return 12;
+  return 14;
+}
+
+/**
+ * Determine team placement order.
+ * Pipeline teams first (in pipeline order), then remaining teams.
+ */
+function computeTeamOrder(teams, pipelineStages, stageToTeam) {
+  const order = [];
+  const placed = new Set();
+
+  // Pipeline teams in stage order
+  if (pipelineStages && pipelineStages.length > 0) {
+    for (const stage of pipelineStages) {
+      const teamId = stageToTeam[stage];
+      if (teamId && teams[teamId] && !placed.has(teamId)) {
+        order.push(teamId);
+        placed.add(teamId);
+      }
+    }
+  }
+
+  // Remaining teams in config order
+  for (const teamId of Object.keys(teams)) {
+    if (!placed.has(teamId)) {
+      order.push(teamId);
+      placed.add(teamId);
+    }
+  }
+
+  return order;
+}
+
+/**
+ * Full layout recomputation. Call when teams change or settings change.
+ * Reads from TEAMS, PIPELINE_STAGES, STAGE_TO_TEAM (state.js imports)
+ * and Settings for roomSizing mode.
+ */
+function rebuildLayout() {
+  const teams = TEAMS;
+  const teamIds = computeTeamOrder(teams, PIPELINE_STAGES, STAGE_TO_TEAM);
+  layoutTeamOrder = teamIds;
+
+  const visibleCount = teamIds.length || 1;
+  const grid = computeGrid(visibleCount);
+  gridCols = grid.cols;
+  gridRows = grid.rows;
+
+  const sizingMode = getSetting('roomSizing') || 'uniform';
+
+  if (sizingMode === 'uniform') {
+    // All rooms same size — based on team with most agents
+    const maxAgents = Math.max(1, ...teamIds.map(id => (teams[id]?.agents || []).length));
+    const uniformSize = computeRoomSize(maxAgents, 'uniform');
+    roomDims = {};
+    for (const id of teamIds) {
+      roomDims[id] = { cols: uniformSize, rows: uniformSize };
+    }
+    maxRoomCols = uniformSize;
+    maxRoomRows = uniformSize;
+  } else {
+    // Adaptive or compact — per-room sizing
+    roomDims = {};
+    let widest = 7, tallest = 7;
+    for (const id of teamIds) {
+      const agentCount = (teams[id]?.agents || []).length;
+      const size = computeRoomSize(agentCount, sizingMode);
+      roomDims[id] = { cols: size, rows: size };
+      if (size > widest) widest = size;
+      if (size > tallest) tallest = size;
+    }
+    maxRoomCols = widest;
+    maxRoomRows = tallest;
+  }
+
+  // Orchestrator zone height
+  const orchHeight = getSetting('orchestratorVisible') !== false
+    ? ORCH_ROWS + 1   // +1 gap tile
+    : 0;
+
+  // Content bounds
+  CONTENT_TILES_W = PAD_LEFT + gridCols * maxRoomCols + (gridCols - 1) * ROOM_GAP + PAD_RIGHT;
+  CONTENT_TILES_H = PAD_TOP + gridRows * maxRoomRows + (gridRows - 1) * ROOM_GAP + orchHeight + PAD_BOTTOM;
+}
 
 // Team colors for room walls/floors
 const TEAM_STYLES = {
@@ -627,6 +746,12 @@ export function init() {
   animSpeed = getSetting("animationSpeed") ?? 1.0;
   onSettingChange("animationSpeed", (v) => { animSpeed = v; });
 
+  // Build initial layout and subscribe to layout-affecting settings
+  rebuildLayout();
+  resize();
+  onSettingChange("roomSizing", () => { rebuildLayout(); resize(); });
+  onSettingChange("orchestratorVisible", () => { rebuildLayout(); resize(); });
+
   // Log filter inputs trigger re-render on change
   for (const id of ["events-search", "events-team-filter"]) {
     const el = document.getElementById(id);
@@ -654,20 +779,6 @@ export function init() {
 
   requestAnimationFrame(gameLoop);
 }
-
-// Content bounds in tiles — room grid PLUS everything that extends beyond it:
-//   Top:    room label text + subtitle (~2 tiles above top room wall)
-//   Bottom: agent chairs/sprites extending below room floor (~2 tiles) + orch message
-//   Right:  agent name cards to the right of sprites (~5 tiles)
-//   Left:   small margin (~1 tile)
-const PAD_TOP = 3;      // room labels above top rooms
-const PAD_BOTTOM = 4;   // agents/chairs below bottom rooms + orchestrator text
-const PAD_LEFT = 1;
-const PAD_RIGHT = 5;    // agent name cards to the right
-
-// The full content area in tiles
-const CONTENT_TILES_W = PAD_LEFT + ROOMS_PER_ROW * ROOM_COLS + ROOM_GAP + PAD_RIGHT;
-const CONTENT_TILES_H = PAD_TOP + 2 * ROOM_ROWS + ROOM_GAP + PAD_BOTTOM;
 
 function resize() {
   const wrap = document.querySelector(".canvas-wrap");
@@ -716,12 +827,12 @@ export function resetView() {
 }
 
 /** Pan camera to center on a team room */
-const TEAM_IDS_ORDER = ["research", "design", "commerce", "learning"];
 export function panToTeam(teamId) {
-  const idx = TEAM_IDS_ORDER.indexOf(teamId);
+  const idx = layoutTeamOrder.indexOf(teamId);
   if (idx === -1) return;
-  const roomCol = idx % ROOMS_PER_ROW;
-  const roomRow = Math.floor(idx / ROOMS_PER_ROW);
+  const roomCol = idx % gridCols;
+  const roomRow = Math.floor(idx / gridCols);
+  const dims = roomDims[teamId] || { cols: 9, rows: 9 };
   const s = TILE_SIZE * zoom;
 
   const contentW = CONTENT_TILES_W * s;
@@ -730,10 +841,17 @@ export function panToTeam(teamId) {
   const h = canvas.height;
   const contentOffsetX = (w - contentW) / 2;
   const contentOffsetY = (h - contentH) / 2;
-  const roomX = contentOffsetX + (PAD_LEFT + roomCol * (ROOM_COLS + ROOM_GAP)) * s;
-  const roomY = contentOffsetY + (PAD_TOP + roomRow * (ROOM_ROWS + ROOM_GAP)) * s;
-  const roomCenterX = roomX + (ROOM_COLS * s) / 2;
-  const roomCenterY = roomY + (ROOM_ROWS * s) / 2;
+  const orchOffset = (getSetting('orchestratorVisible') !== false && gridRows > 1)
+    ? (ORCH_ROWS + 1) : 0;
+  const roomX = contentOffsetX + (PAD_LEFT + roomCol * (maxRoomCols + ROOM_GAP)) * s;
+  let roomY;
+  if (roomRow === 0) {
+    roomY = contentOffsetY + PAD_TOP * s;
+  } else {
+    roomY = contentOffsetY + (PAD_TOP + maxRoomRows + orchOffset + (roomRow - 1) * (maxRoomRows + ROOM_GAP)) * s;
+  }
+  const roomCenterX = roomX + (dims.cols * s) / 2;
+  const roomCenterY = roomY + (dims.rows * s) / 2;
   const dpr = window.devicePixelRatio || 1;
 
   userZoom = 1.5;
@@ -845,24 +963,38 @@ function render() {
   const offsetX = contentOffsetX + PAD_LEFT * s;
   const offsetY = contentOffsetY + PAD_TOP * s;
   // Room grid width (used by orchestrator zone, not for centering)
-  const totalW = (ROOMS_PER_ROW * ROOM_COLS + ROOM_GAP) * s;
+  const totalW = (gridCols * maxRoomCols + (gridCols - 1) * ROOM_GAP) * s;
+
+  // Orchestrator zone offset — pushes room rows 1+ down when visible
+  const orchOffset = (getSetting('orchestratorVisible') !== false && gridRows > 1)
+    ? (ORCH_ROWS + 1)  // orchestrator zone + gap tile
+    : 0;
 
   // ---- Draw rooms ----
-  const teamEntries = Object.entries(TEAMS);
   const drawables = [];
 
-  for (let i = 0; i < teamEntries.length; i++) {
-    const [teamId, team] = teamEntries[i];
-    const roomCol = i % ROOMS_PER_ROW;
-    const roomRow = Math.floor(i / ROOMS_PER_ROW);
-    const rx = offsetX + roomCol * (ROOM_COLS + ROOM_GAP) * s;
-    const ry = offsetY + roomRow * (ROOM_ROWS + ROOM_GAP) * s;
+  for (let i = 0; i < layoutTeamOrder.length; i++) {
+    const teamId = layoutTeamOrder[i];
+    const team = TEAMS[teamId];
+    if (!team) continue;
+    const roomCol = i % gridCols;
+    const roomRow = Math.floor(i / gridCols);
+    const dims = roomDims[teamId] || { cols: 9, rows: 9 };
+    const rx = offsetX + roomCol * (maxRoomCols + ROOM_GAP) * s;
+    let ry;
+    if (roomRow === 0) {
+      ry = offsetY;
+    } else {
+      ry = offsetY + maxRoomRows * s                        // first row height
+         + orchOffset * s                                    // orchestrator zone
+         + (roomRow - 1) * (maxRoomRows + ROOM_GAP) * s;   // subsequent rows
+    }
 
-    drawRoom(rx, ry, teamId);
-    drawRoomLabel(rx, ry, team, teamId);
+    drawRoom(rx, ry, teamId, dims.cols, dims.rows);
+    drawRoomLabel(rx, ry, team, teamId, dims.cols);
 
     // Build drawables for z-sorting
-    const items = buildRoomLayout(team, teamId);
+    const items = buildRoomLayout(team, teamId, dims.cols, dims.rows);
     for (const item of items) {
       const ix = rx + item.col * s;
       const iy = ry + item.row * s;
@@ -924,13 +1056,13 @@ function render() {
 
 // ---- Room Rendering ----
 
-function drawRoom(rx, ry, teamId) {
+function drawRoom(rx, ry, teamId, roomCols, roomRows) {
   const s = TILE_SIZE * zoom;
   const style = TEAM_STYLES[teamId] || TEAM_STYLES.research;
 
   // Checkerboard floor
-  for (let r = 0; r < ROOM_ROWS; r++) {
-    for (let c = 0; c < ROOM_COLS; c++) {
+  for (let r = 0; r < roomRows; r++) {
+    for (let c = 0; c < roomCols; c++) {
       ctx.fillStyle = (r + c) % 2 === 0 ? style.floor1 : style.floor2;
       ctx.fillRect(rx + c * s, ry + r * s, s, s);
     }
@@ -938,15 +1070,15 @@ function drawRoom(rx, ry, teamId) {
 
   // Walls
   ctx.fillStyle = style.wall;
-  ctx.fillRect(rx, ry, ROOM_COLS * s, zoom * 4);
-  ctx.fillRect(rx, ry, zoom * 4, ROOM_ROWS * s);
-  ctx.fillRect(rx + ROOM_COLS * s - zoom * 4, ry, zoom * 4, ROOM_ROWS * s);
-  ctx.fillRect(rx, ry + ROOM_ROWS * s - zoom * 4, ROOM_COLS * s, zoom * 4);
+  ctx.fillRect(rx, ry, roomCols * s, zoom * 4);
+  ctx.fillRect(rx, ry, zoom * 4, roomRows * s);
+  ctx.fillRect(rx + roomCols * s - zoom * 4, ry, zoom * 4, roomRows * s);
+  ctx.fillRect(rx, ry + roomRows * s - zoom * 4, roomCols * s, zoom * 4);
 
   // Accent glow on top
   ctx.fillStyle = style.accent;
   ctx.globalAlpha = 0.5;
-  ctx.fillRect(rx, ry, ROOM_COLS * s, zoom * 2);
+  ctx.fillRect(rx, ry, roomCols * s, zoom * 2);
   ctx.globalAlpha = 1;
 
   // Active stage highlight — subtle glow on the whole room
@@ -956,12 +1088,12 @@ function drawRoom(rx, ry, teamId) {
     ctx.save();
     ctx.globalAlpha = 0.04 + 0.02 * Math.sin(tick * 0.05);
     ctx.fillStyle = style.accent;
-    ctx.fillRect(rx, ry, ROOM_COLS * s, ROOM_ROWS * s);
+    ctx.fillRect(rx, ry, roomCols * s, roomRows * s);
     ctx.restore();
   }
 }
 
-function drawRoomLabel(rx, ry, team, teamId) {
+function drawRoomLabel(rx, ry, team, teamId, roomCols) {
   const s = TILE_SIZE * zoom;
   const style = TEAM_STYLES[teamId];
 
@@ -977,7 +1109,7 @@ function drawRoomLabel(rx, ry, team, teamId) {
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
-  const cx = rx + (ROOM_COLS * s) / 2;
+  const cx = rx + (roomCols * s) / 2;
   const cy = ry + nameSize * 0.9;
   const text = team.label.toUpperCase();
   const metrics = ctx.measureText(text);
