@@ -1,0 +1,126 @@
+Metadata-Version: 2.4
+Name: pixelpulse
+Version: 0.1.0
+Summary: Real-time pixel-art dashboard for multi-agent systems. Production observability meets engaging visualization.
+Author: PixelPulse Contributors
+License-Expression: Apache-2.0
+Project-URL: Homepage, https://github.com/pixelpulse-ai/pixelpulse
+Project-URL: Documentation, https://pixelpulse.dev
+Project-URL: Repository, https://github.com/pixelpulse-ai/pixelpulse
+Project-URL: Issues, https://github.com/pixelpulse-ai/pixelpulse/issues
+Keywords: agents,multi-agent,observability,dashboard,visualization,pixel-art,llm,ai
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Topic :: System :: Monitoring
+Classifier: Framework :: FastAPI
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: fastapi>=0.100.0
+Requires-Dist: uvicorn[standard]>=0.20.0
+Requires-Dist: websockets>=11.0
+Provides-Extra: crewai
+Requires-Dist: crewai>=0.60.0; extra == "crewai"
+Provides-Extra: langgraph
+Requires-Dist: langgraph>=0.2.0; extra == "langgraph"
+Provides-Extra: openai
+Requires-Dist: openai-agents>=0.1.0; extra == "openai"
+Provides-Extra: autogen
+Requires-Dist: autogen-agentchat>=0.4.0; extra == "autogen"
+Provides-Extra: all
+Requires-Dist: pixelpulse[autogen,crewai,langgraph,openai]; extra == "all"
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.21.0; extra == "dev"
+Requires-Dist: httpx>=0.24.0; extra == "dev"
+Requires-Dist: ruff>=0.4.0; extra == "dev"
+Dynamic: license-file
+
+# PixelPulse
+
+Real-time pixel-art dashboard for multi-agent systems. Production observability meets engaging visualization.
+
+```
+pip install pixelpulse
+```
+
+## Quick Start
+
+```python
+from pixelpulse import PixelPulse
+
+pp = PixelPulse(
+    agents={
+        "researcher": {"team": "research", "role": "Finds information"},
+        "writer": {"team": "content", "role": "Writes articles"},
+    },
+    teams={
+        "research": {"label": "Research Lab", "color": "#00d4ff"},
+        "content": {"label": "Content Studio", "color": "#ff6ec7"},
+    },
+)
+pp.serve()  # Opens pixel-art dashboard at http://localhost:8765
+```
+
+Then emit events from your agent code:
+
+```python
+pp.agent_started("researcher", task="Searching for trends")
+pp.agent_message("researcher", "writer", content="Found 5 trends", tag="data")
+pp.agent_completed("researcher", output="Full research output here")
+pp.cost_update("researcher", cost=0.003, tokens_in=1200, tokens_out=400)
+```
+
+## Framework Adapters
+
+### CrewAI
+
+```python
+from pixelpulse import PixelPulse
+
+pp = PixelPulse(agents={...})
+adapter = pp.adapter("crewai")
+adapter.instrument(my_crew)
+pp.serve()
+```
+
+### Generic (any Python agent system)
+
+```python
+pp = PixelPulse(agents={...})
+
+# In your agent code, emit events directly:
+pp.agent_started("my-agent", task="Working on it")
+pp.agent_thinking("my-agent", thought="Considering options A, B, C...")
+pp.agent_message("agent-a", "agent-b", content="Here's the data")
+pp.agent_completed("my-agent", output="Done!")
+```
+
+## What You Get
+
+- Animated pixel-art characters representing your agents
+- Real-time agent-to-agent communication particles
+- Speech bubbles showing agent reasoning
+- Pipeline stage progression
+- Cost and token tracking per agent
+- Rich event log
+- Dark and light themes
+- Keyboard shortcuts
+
+## Why PixelPulse?
+
+Production observability tools (AgentOps, Langfuse, Arize Phoenix) have great tracing but boring dashboards.
+
+Pixel-art visualization tools (Pixel Agents) are fun but have zero production utility.
+
+PixelPulse combines both: **engaging visualization + real observability**.
+
+## License
+
+Apache-2.0

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PixelPulse — Agent Office</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/dashboard.css">
+</head>
+<body>
+  <!-- Scanline overlay -->
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="topbar__brand">
+      <span class="topbar__logo">&#x2B21;</span>
+      <h1 class="topbar__title">PIXELPULSE</h1>
+      <span class="topbar__subtitle">Mission Control</span>
+    </div>
+    <div class="topbar__controls">
+      <span id="conn-status" class="conn">
+        <span class="dot dot--yellow"></span>
+        <span class="label">connecting</span>
+        <button id="reconnect-btn" class="btn btn--ghost btn--tiny" style="display:none">Reconnect</button>
+      </span>
+      <span class="topbar__divider"></span>
+      <button id="demo-btn" class="btn btn--ghost">&#x25b6; Demo</button>
+      <select id="speed-select" class="btn btn--ghost speed-select" title="Demo speed">
+        <option value="5000">0.5x</option>
+        <option value="3500" selected>1x</option>
+        <option value="2000">1.5x</option>
+        <option value="1200">2x</option>
+      </select>
+      <span class="topbar__divider"></span>
+      <label id="theme-toggle" class="theme-switch" title="Toggle theme">
+        <input type="checkbox" id="theme-checkbox">
+        <span class="theme-switch__track">
+          <span class="theme-switch__icon theme-switch__icon--sun">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          </span>
+          <span class="theme-switch__thumb"></span>
+          <span class="theme-switch__icon theme-switch__icon--moon">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          </span>
+        </span>
+      </label>
+      <button id="settings-btn" class="btn btn--ghost btn--icon" title="Settings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+      <button id="sidebar-toggle" class="btn btn--ghost">&#x25e7; Panel</button>
+    </div>
+  </header>
+
+  <main class="dashboard">
+    <!-- Canvas office visualization -->
+    <div class="canvas-wrap">
+      <canvas id="office-canvas"></canvas>
+      <div id="tooltip" class="tooltip" role="tooltip"></div>
+      <!-- Floating cost pill — always visible on canvas -->
+      <div class="cost-pill" id="cost-pill">
+        <span class="cost-pill__label">Run Cost</span>
+        <span id="total-cost" class="cost-pill__amount">$0.0000</span>
+      </div>
+      <!-- Canvas controls overlay -->
+      <div class="canvas-controls" id="canvas-controls">
+        <button class="canvas-ctrl" id="ctrl-zoom-in" title="Zoom in">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <button class="canvas-ctrl" id="ctrl-zoom-out" title="Zoom out">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <button class="canvas-ctrl" id="ctrl-pan" title="Pan (shift+drag)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>
+        </button>
+        <button class="canvas-ctrl canvas-ctrl--label" id="ctrl-fit" title="Fit all content in view">Fit</button>
+        <button class="canvas-ctrl" id="ctrl-reset" title="Reset view">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        </button>
+        <button class="canvas-ctrl" id="ctrl-screenshot" title="Screenshot">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Sidebar panel — compact static info only -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar__resize" id="sidebar-resize" title="Drag to resize"></div>
+      <section class="sidebar__section">
+        <h3 class="sidebar__heading">Pipeline</h3>
+        <div id="pipeline-stages" class="pipeline"></div>
+      </section>
+      <section class="sidebar__section">
+        <h3 class="sidebar__heading">Agent Activity</h3>
+        <div id="agent-activity" class="agent-activity"></div>
+      </section>
+      <section class="sidebar__section">
+        <h3 class="sidebar__heading">Active Runs</h3>
+        <div id="active-runs" class="runs">No active runs</div>
+      </section>
+    </aside>
+
+    <!-- Bottom bar collapse toggle — lives OUTSIDE bottom-bar so it stays visible -->
+    <button class="bottom-bar__collapse" id="bottom-collapse" title="Toggle bottom panel">&#x25bc; Logs</button>
+
+    <!-- Bottom bar — two-column live feeds, collapsible + resizable -->
+    <div id="bottom-bar" class="bottom-bar">
+      <div class="bottom-bar__resize" id="bottom-resize" title="Drag to resize"></div>
+      <div class="bottom-panel">
+        <div class="bottom-panel__header">
+          <span>Agent Comms</span>
+          <div class="log-filter">
+            <input type="text" class="log-filter__search" id="comms-search" placeholder="Search...">
+            <select class="log-filter__team" id="comms-team-filter">
+              <option value="">All Teams</option>
+              <!-- Team options populated dynamically by renderer -->
+            </select>
+          </div>
+        </div>
+        <div id="comms-feed" class="bottom-panel__feed comms-feed"></div>
+      </div>
+      <div class="bottom-panel">
+        <div class="bottom-panel__header">
+          <span>Event Log</span>
+          <div class="log-filter">
+            <input type="text" class="log-filter__search" id="events-search" placeholder="Search...">
+            <select class="log-filter__team" id="events-team-filter">
+              <option value="">All Teams</option>
+              <!-- Team options populated dynamically by renderer -->
+            </select>
+            <button class="log-filter__export" id="export-events" title="Download JSON">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </button>
+          </div>
+        </div>
+        <div id="event-log" class="bottom-panel__feed event-log"></div>
+      </div>
+    </div>
+  </main>
+
+  <aside id="agent-detail" class="agent-detail" hidden>
+    <header class="agent-detail__header">
+      <h3 id="agent-detail-name" class="agent-detail__name"></h3>
+      <button class="agent-detail__close" aria-label="Close">&times;</button>
+    </header>
+    <div class="agent-detail__body">
+      <div class="agent-detail__meta">
+        <span id="agent-detail-team" class="agent-detail__team"></span>
+        <span id="agent-detail-role" class="agent-detail__role"></span>
+      </div>
+      <div class="agent-detail__status">
+        <span class="agent-detail__label">Status</span>
+        <span id="agent-detail-status" class="agent-detail__value"></span>
+      </div>
+      <div class="agent-detail__section">
+        <h4>Recent Activity</h4>
+        <div id="agent-detail-events" class="agent-detail__events"></div>
+      </div>
+      <div class="agent-detail__section">
+        <h4>Cost</h4>
+        <span id="agent-detail-cost" class="agent-detail__cost"></span>
+      </div>
+    </div>
+  </aside>
+
+  <dialog id="settings-drawer" class="settings-drawer" aria-label="Settings">
+    <div class="settings-drawer__inner">
+      <header class="settings-drawer__header">
+        <h2 class="settings-drawer__title">Settings</h2>
+        <button class="settings-drawer__close" aria-label="Close">&times;</button>
+      </header>
+      <div class="settings-drawer__body">
+        <section class="settings-section">
+          <h3 class="settings-section__title">Visual</h3>
+          <label class="settings-field">
+            <span class="settings-field__label">Theme</span>
+            <select data-setting="theme" class="settings-select">
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+              <option value="high-contrast">High Contrast</option>
+            </select>
+          </label>
+          <label class="settings-field">
+            <span class="settings-field__label">Font Scale</span>
+            <input type="range" data-setting="fontScale" min="0.75" max="1.5" step="0.125">
+            <output data-output="fontScale">1.0</output>
+          </label>
+          <label class="settings-field">
+            <span class="settings-field__label">Animation Speed</span>
+            <input type="range" data-setting="animationSpeed" min="0" max="2" step="0.25">
+            <output data-output="animationSpeed">1.0x</output>
+          </label>
+          <label class="settings-field settings-field--toggle">
+            <span class="settings-field__label">Scanlines</span>
+            <input type="checkbox" data-setting="scanlinesEnabled">
+          </label>
+          <label class="settings-field settings-field--toggle">
+            <span class="settings-field__label">Pixel-Perfect</span>
+            <input type="checkbox" data-setting="canvasSmoothing" data-invert="true">
+          </label>
+        </section>
+        <section class="settings-section">
+          <h3 class="settings-section__title">Layout</h3>
+          <label class="settings-field settings-field--toggle">
+            <span class="settings-field__label">Sidebar Visible</span>
+            <input type="checkbox" data-setting="sidebarVisible">
+          </label>
+          <label class="settings-field">
+            <span class="settings-field__label">Bottom Bar Height</span>
+            <input type="range" data-setting="bottomBarHeight" min="80" max="400" step="20">
+            <output data-output="bottomBarHeight">220px</output>
+          </label>
+          <label class="settings-field">
+            <span class="settings-field__label">Default Zoom</span>
+            <input type="range" data-setting="zoomLevel" min="0.5" max="3" step="0.25">
+            <output data-output="zoomLevel">1.0x</output>
+          </label>
+          <fieldset class="settings-field settings-field--group">
+            <legend class="settings-field__label">Sidebar Sections</legend>
+            <label class="settings-check"><input type="checkbox" data-setting="sidebarSections.pipeline"> Pipeline</label>
+            <label class="settings-check"><input type="checkbox" data-setting="sidebarSections.agents"> Agents</label>
+            <label class="settings-check"><input type="checkbox" data-setting="sidebarSections.runs"> Runs</label>
+            <label class="settings-check"><input type="checkbox" data-setting="sidebarSections.cost"> Cost</label>
+          </fieldset>
+        </section>
+      </div>
+      <footer class="settings-drawer__footer">
+        <button class="btn btn--ghost" id="settings-reset">Reset to Defaults</button>
+      </footer>
+    </div>
+  </dialog>
+
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <dialog id="keyboard-help" class="keyboard-help" aria-label="Keyboard Shortcuts">
+    <div class="keyboard-help__inner">
+      <header class="keyboard-help__header">
+        <h2>Keyboard Shortcuts</h2>
+        <button class="keyboard-help__close" aria-label="Close">&times;</button>
+      </header>
+      <div class="keyboard-help__body">
+        <div class="shortcut-row"><kbd>Space</kbd> <span>Toggle demo</span></div>
+        <div class="shortcut-row"><kbd>F</kbd> <span>Fit view</span></div>
+        <div class="shortcut-row"><kbd>+</kbd> / <kbd>-</kbd> <span>Zoom in / out</span></div>
+        <div class="shortcut-row"><kbd>1</kbd>&#x2013;<kbd>4</kbd> <span>Jump to team room</span></div>
+        <div class="shortcut-row"><kbd>?</kbd> <span>This help</span></div>
+        <div class="shortcut-row"><kbd>Esc</kbd> <span>Close panel</span></div>
+      </div>
+    </div>
+  </dialog>
+
+  <script type="module" src="/static/dashboard.js"></script>
+</body>
+</html>

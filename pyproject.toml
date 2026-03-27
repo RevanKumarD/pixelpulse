@@ -1,0 +1,74 @@
+[build-system]
+requires = ["setuptools>=68.0", "setuptools-scm>=8.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pixelpulse"
+version = "0.1.0"
+description = "Real-time pixel-art dashboard for multi-agent systems. Production observability meets engaging visualization."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.10"
+authors = [
+    { name = "PixelPulse Contributors" },
+]
+keywords = [
+    "agents", "multi-agent", "observability", "dashboard",
+    "visualization", "pixel-art", "llm", "ai",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: System :: Monitoring",
+    "Framework :: FastAPI",
+]
+dependencies = [
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.20.0",
+    "websockets>=11.0",
+]
+
+[project.optional-dependencies]
+crewai = ["crewai>=0.60.0"]
+langgraph = ["langgraph>=0.2.0"]
+openai = ["openai-agents>=0.1.0"]
+autogen = ["autogen-agentchat>=0.4.0"]
+all = ["pixelpulse[crewai,langgraph,openai,autogen]"]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21.0",
+    "httpx>=0.24.0",
+    "ruff>=0.4.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/pixelpulse-ai/pixelpulse"
+Documentation = "https://pixelpulse.dev"
+Repository = "https://github.com/pixelpulse-ai/pixelpulse"
+Issues = "https://github.com/pixelpulse-ai/pixelpulse/issues"
+
+[project.scripts]
+pixelpulse = "pixelpulse.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+pixelpulse = ["static/**/*", "static/**/*.html", "static/**/*.js", "static/**/*.css", "static/**/*.png"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
