@@ -1192,7 +1192,7 @@ function render() {
         const iy = ry + item.row * s;
         // No z-bonus: natural Y-order means desk/monitor draw ON TOP of agent
         const zY = iy;
-        drawables.push({ type: item.type, x: ix, y: iy, zY, teamId, agent: item.agent, roaming: item.roaming });
+        drawables.push({ type: item.type, x: ix, y: iy, zY, teamId, agent: item.agent, roaming: item.roaming, count: item.count });
       }
     }
   }
@@ -1220,6 +1220,42 @@ function render() {
       case "box": drawSprite(BOX_SPRITE, d.x, d.y); break;
       case "trophy": drawSprite(TROPHY_SPRITE, d.x, d.y); break;
       case "agent": drawAgent(d.x, d.y, d.agent, d.teamId, d.roaming); break;
+      case "overflow-agent": {
+        // Small 8x8 pixel head icon for agents that didn't get a desk in compact mode
+        const ovAgent = getAgent(d.agent);
+        const ovStyle = getTeamStyle(d.teamId);
+        const iconSize = 8 * zoom;
+        const isActive = ovAgent?.status === "active";
+
+        // Glow if active
+        if (isActive) {
+          ctx.save();
+          ctx.shadowColor = ovStyle.accent;
+          ctx.shadowBlur = 6 * zoom;
+          ctx.fillStyle = ovStyle.accent;
+          ctx.beginPath();
+          ctx.arc(d.x + iconSize / 2, d.y + iconSize / 2, iconSize / 2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+        // Head circle
+        ctx.fillStyle = isActive ? ovStyle.accent : "#475569";
+        ctx.beginPath();
+        ctx.arc(d.x + iconSize / 2, d.y + iconSize / 2, iconSize / 2, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      }
+      case "overflow-badge": {
+        const fontSize = Math.max(7, Math.round(7 * zoom * 0.5));
+        ctx.save();
+        ctx.font = `${fontSize}px "JetBrains Mono", monospace`;
+        ctx.fillStyle = "#94a3b8";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "middle";
+        ctx.fillText(`+${d.count}`, d.x, d.y + 4 * zoom);
+        ctx.restore();
+        break;
+      }
     }
   }
 
@@ -1768,12 +1804,33 @@ function drawOrchestratorZone(offsetX, offsetY, totalW, s) {
 // ---- Room Layout ----
 
 function buildRoomLayout(team, teamId, roomCols, roomRows) {
-  const agents = team.agents;
+  const allAgents = team.agents;
   const items = [];
+  const sizingMode = getSetting('roomSizing') || 'uniform';
+
+  // In compact mode, max 6 agents get full desk treatment; rest become overflow icons
+  const maxFullDesks = sizingMode === 'compact' ? 6 : allAgents.length;
+
+  // Sort so active agents get priority for desk positions in compact mode
+  let deskAgents, overflowAgents;
+  if (sizingMode === 'compact' && allAgents.length > maxFullDesks) {
+    const sorted = [...allAgents].sort((a, b) => {
+      const aAgent = getAgent(a);
+      const bAgent = getAgent(b);
+      const aActive = aAgent?.status === "active" ? 0 : 1;
+      const bActive = bAgent?.status === "active" ? 0 : 1;
+      return aActive - bActive;
+    });
+    deskAgents = sorted.slice(0, maxFullDesks);
+    overflowAgents = sorted.slice(maxFullDesks);
+  } else {
+    deskAgents = allAgents;
+    overflowAgents = [];
+  }
 
   // Adaptive centering: compute grid dimensions then center in room
-  const cols = Math.min(agents.length, 2);          // max 2 per row
-  const rows = Math.ceil(agents.length / 2);
+  const cols = Math.min(deskAgents.length, 2);       // max 2 per row
+  const rows = Math.ceil(deskAgents.length / 2);
   const deskSpacingX = 4;                            // cols between desks
   const deskSpacingY = 2.4;                          // rows between desks
   const agentOffset = 1.9;                           // agent sits behind monitor (sweet spot)
@@ -1782,7 +1839,7 @@ function buildRoomLayout(team, teamId, roomCols, roomRows) {
   const startCol = (roomCols - gridW - 2) / 2;       // center horizontally (-2 for desk width)
   const startRow = (roomRows - gridH - 1) / 2 + agentOffset; // center the full unit, desk anchor
 
-  for (let i = 0; i < agents.length; i++) {
+  for (let i = 0; i < deskAgents.length; i++) {
     const col = startCol + (i % 2) * deskSpacingX;
     const row = startRow + Math.floor(i / 2) * deskSpacingY;
     // Agent centered with monitor on desk, facing viewer
@@ -1790,18 +1847,44 @@ function buildRoomLayout(team, teamId, roomCols, roomRows) {
     const agentDeskRow = row - agentOffset;
 
     // Register desk position for roaming system
-    initRoam(agents[i], deskCenterCol, agentDeskRow, teamId);
+    initRoam(deskAgents[i], deskCenterCol, agentDeskRow, teamId);
 
     // Use roaming position for idle agents
-    const agent = getAgent(agents[i]);
-    const rs = roamState[agents[i]];
+    const agent = getAgent(deskAgents[i]);
+    const rs = roamState[deskAgents[i]];
     const isRoaming = rs && agent?.status === "idle" && rs.state !== "seated";
     const agentCol = isRoaming ? rs.col : deskCenterCol;
     const agentRow = isRoaming ? rs.row : agentDeskRow;
 
-    items.push({ type: "agent", col: agentCol, row: agentRow, agent: agents[i], roaming: isRoaming });
+    items.push({ type: "agent", col: agentCol, row: agentRow, agent: deskAgents[i], roaming: isRoaming });
     items.push({ type: "monitor", col: deskCenterCol, row: row - 0.15 });
     items.push({ type: "desk", col, row });
+  }
+
+  // Overflow agents: small head icons along bottom edge (compact mode only)
+  if (overflowAgents.length > 0) {
+    const iconSpacing = 1.2;
+    const totalIconW = overflowAgents.length * iconSpacing;
+    const startX = (roomCols - totalIconW) / 2;
+    const iconY = roomRows - 1.0;
+
+    for (let i = 0; i < overflowAgents.length; i++) {
+      items.push({
+        type: "overflow-agent",
+        col: startX + i * iconSpacing,
+        row: iconY,
+        agent: overflowAgents[i],
+        roaming: false,
+      });
+    }
+
+    // +N badge after the icons
+    items.push({
+      type: "overflow-badge",
+      col: startX + overflowAgents.length * iconSpacing,
+      row: iconY,
+      count: overflowAgents.length,
+    });
   }
 
   // Decorations — scale with room size, spread to corners
