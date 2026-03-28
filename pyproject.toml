@@ -3,7 +3,7 @@ requires = ["setuptools>=68.0", "setuptools-scm>=8.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pixelpulse"
+name = "pixelpulse-dashboard"
 version = "0.3.0"
 description = "Real-time pixel-art dashboard for multi-agent systems. Production observability meets engaging visualization."
 readme = "README.md"
