@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pixelpulse"
-version = "0.1.0"
+version = "0.3.0"
 description = "Real-time pixel-art dashboard for multi-agent systems. Production observability meets engaging visualization."
 readme = "README.md"
 license = "Apache-2.0"

@@ -2,7 +2,7 @@
   "name": "pixelpulse",
   "displayName": "PixelPulse",
   "description": "Pixel-art agent dashboard — watch your AI agents work in real time",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "publisher": "revankumard",
   "license": "Apache-2.0",
   "engines": {
