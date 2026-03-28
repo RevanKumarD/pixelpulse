@@ -1,10 +1,6 @@
 <div align="center">
 
-<br/>
-
 <img src=".github/banner.png" alt="PixelPulse — See your agents think" width="820" style="image-rendering: pixelated;" />
-
-<br/><br/>
 
 <a href="https://pypi.org/project/pixelpulse-dashboard/"><img src="https://img.shields.io/pypi/v/pixelpulse-dashboard.svg?style=flat-square&logo=python&logoColor=white&label=PyPI&color=3b82f6" alt="PyPI" /></a>&nbsp;
 <a href="https://pypi.org/project/pixelpulse-dashboard/"><img src="https://img.shields.io/pypi/pyversions/pixelpulse-dashboard.svg?style=flat-square&label=Python&color=3b82f6" alt="Python" /></a>&nbsp;
@@ -13,19 +9,15 @@
 <img src="https://img.shields.io/badge/tests-505%20passing-22c55e?style=flat-square" alt="Tests" />&nbsp;
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-64748b?style=flat-square" alt="License" /></a>
 
-<br/><br/>
+<br/>
 
 <img src="tests/visual/demo-preview.gif" alt="PixelPulse demo" width="820" style="image-rendering: pixelated; border-radius: 8px;" />
-
-<br/><br/>
 
 [Install](#-install) · [Quick Start](#-30-second-start) · [8 Adapters](#-plug-into-any-framework) · [Screenshots](#-see-it-in-action) · [API](#-the-full-api) · [Roadmap](#%EF%B8%8F-roadmap)
 
 [Demo Videos](https://github.com/RevanKumarD/pixelpulse/releases/tag/demo-v1) · [VS Code Extension](https://marketplace.visualstudio.com/items?itemName=revankumard.pixelpulse) · [PyPI](https://pypi.org/project/pixelpulse-dashboard/) · [Issues](https://github.com/RevanKumarD/pixelpulse/issues)
 
 </div>
-
-<br/>
 
 ## The Problem
 
@@ -61,8 +53,6 @@ You're running a multi-agent pipeline. Something stalls. Which agent? What was i
 </tr>
 </table>
 
-<br/>
-
 ## &#x26A1; Install
 
 ```bash
@@ -84,8 +74,6 @@ pip install "pixelpulse-dashboard[otel]"         # OpenTelemetry
 pip install "pixelpulse-dashboard[all]"          # Everything
 ```
 </details>
-
-<br/>
 
 ## &#x1F680; 30-Second Start
 
@@ -115,8 +103,6 @@ pp.agent_completed("researcher", output="Research complete")
 
 Open `localhost:8765`. Your agents are walking around their office.
 
-<br/>
-
 ## &#x1F3A8; See It in Action
 
 <div align="center">
@@ -124,8 +110,6 @@ Open `localhost:8765`. Your agents are walking around their office.
 <br/>
 <sub><b>4 teams active</b> · pipeline progressing · event log streaming · cost tracking live</sub>
 </div>
-
-<br/>
 
 <table>
 <tr>
@@ -177,8 +161,6 @@ Open `localhost:8765`. Your agents are walking around their office.
 </tr>
 </table>
 </details>
-
-<br/>
 
 ## &#x1F50C; Plug Into Any Framework
 
@@ -236,8 +218,6 @@ def research(query: str) -> str:
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:8765 python my_agents.py
 ```
 </details>
-
-<br/>
 
 ## &#x1F4E1; The Full API
 
@@ -297,8 +277,6 @@ pp.serve(port=8765, open_browser=True)
 </tr>
 </table>
 
-<br/>
-
 ## &#x2699; Architecture
 
 | Layer | Tech | Purpose |
@@ -308,8 +286,6 @@ pp.serve(port=8765, open_browser=True)
 | **Renderer** | Canvas 2D | 60fps pixel-art: sprites, pathfinding, particles |
 | **Adapters** | Protocol-based | Thin per-framework translation (~100 LOC each) |
 | **Plugins** | MCP + hooks | Claude Code, VS Code, Codex, Gemini CLI |
-
-<br/>
 
 ## &#x2328;&#xFE0F; Keyboard Shortcuts
 
@@ -325,8 +301,6 @@ pp.serve(port=8765, open_browser=True)
 
 </div>
 
-<br/>
-
 ## &#x1F9EA; Tests
 
 505 tests across 6 layers:
@@ -340,25 +314,60 @@ pp.serve(port=8765, open_browser=True)
 | **Plugin** | 22 | Hook handler, MCP tools, ensure_server |
 | **Visual** | 17 | Playwright: idle, active, themes, errors |
 
-<br/>
+## &#x1F52E; Vision
+
+Most agent observability tools show you **what happened after it failed**. PixelPulse shows you **what's happening while it runs**. We believe the future of multi-agent debugging is spatial, real-time, and framework-agnostic.
+
+Our goal: **become the default way developers watch their agents work** — from prototype to production, from solo hacking to team war rooms.
 
 ## &#x1F5FA;&#xFE0F; Roadmap
 
-**v0.3** *(current)* &mdash; Agent detail panel · Claude Code plugin · SQLite history · Replay · Video export · OTEL · VS Code ext · PyPI
+### v0.3 &mdash; Foundation *(current release)*
 
-**v0.4** *(next)* &mdash; Codex/Gemini plugins · Cost alerting · Custom sprite packs
+> Ship the core product: real-time visualization that works with any Python agent framework.
 
-**v0.5** &mdash; Langchain · Semantic Kernel · n8n integration
+- Agent detail panel with 4-tab deep dive (overview, messages, reasoning, performance)
+- Claude Code plugin with 7 lifecycle hooks + 6 MCP tools
+- VS Code sidebar extension with live dashboard
+- SQLite persistent storage with run history + event replay
+- Video export (WebM recording of live sessions)
+- OpenTelemetry GenAI span ingestion
+- 8 framework adapters: LangGraph, CrewAI, AutoGen, OpenAI Agents SDK, Claude Code, OTEL, `@observe`, manual
+- 505 tests across 6 layers
 
-**v1.0** &mdash; Multi-session dashboard · Cloud option · 3D visualization
+### v0.4 &mdash; Ecosystem *(next)*
 
-<br/>
+> Expand to every major AI coding tool and add operational intelligence.
+
+- Codex CLI + Gemini CLI plugins (reuse MCP server architecture)
+- **Cost alerting** — configurable thresholds with visual + webhook notifications
+- **Custom sprite packs** — upload your own pixel-art characters and room themes
+- **Team annotations** — mark agents with notes, flags, and priorities during runs
+- **Export & share** — shareable HTML snapshots of dashboard state
+
+### v0.5 &mdash; Coverage
+
+> Fill the remaining framework gaps and open the integration API.
+
+- LangChain adapter
+- Semantic Kernel adapter
+- n8n / Flowise webhook integration
+- **Plugin SDK** — build your own PixelPulse plugins with a documented API
+- **Embeddable widget** — drop the dashboard into any web app via `<iframe>` or React component
+
+### v1.0 &mdash; Scale
+
+> From single-developer tool to team-grade observability platform.
+
+- **Multi-session dashboard** — monitor multiple pipelines side-by-side
+- **Cloud hosted option** — zero-install, share dashboards with your team via URL
+- **3D visualization mode** — isometric pixel-art with depth, camera orbiting, and layer toggling
+- **Alerting & anomaly detection** — pattern-based alerts when agent behavior deviates from baseline
+- **Session diffing** — compare two runs visually to spot where behavior diverged
 
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and how to write a new adapter.
-
-<br/>
 
 ---
 
