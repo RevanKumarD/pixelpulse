@@ -1,42 +1,141 @@
-# PixelPulse
+<div align="center">
 
-**Watch your AI agents work — pixel-art observability for multi-agent systems.**
+<br/>
 
-[![PyPI version](https://img.shields.io/pypi/v/pixelpulse.svg)](https://pypi.org/project/pixelpulse/)
-[![Python](https://img.shields.io/pypi/pyversions/pixelpulse.svg)](https://pypi.org/project/pixelpulse/)
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![CI](https://github.com/RevanKumarD/pixelpulse/actions/workflows/ci.yml/badge.svg)](https://github.com/RevanKumarD/pixelpulse/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-505%20passing-brightgreen.svg)](tests/)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/%E2%96%88%E2%96%88%20PixelPulse%20%E2%96%88%E2%96%88-Production%20Observability%20Meets%20Pixel%20Art-ff6ec7?style=for-the-badge&labelColor=0f172a" />
+  <source media="(prefers-color-scheme: light)" srcset="https://img.shields.io/badge/%E2%96%88%E2%96%88%20PixelPulse%20%E2%96%88%E2%96%88-Production%20Observability%20Meets%20Pixel%20Art-ff6ec7?style=for-the-badge&labelColor=1e293b" />
+  <img alt="PixelPulse" src="https://img.shields.io/badge/%E2%96%88%E2%96%88%20PixelPulse%20%E2%96%88%E2%96%88-Production%20Observability%20Meets%20Pixel%20Art-ff6ec7?style=for-the-badge&labelColor=0f172a" />
+</picture>
 
-![PixelPulse Demo — agents roaming, messages flowing, pipeline progressing](tests/visual/demo-preview.gif)
+<br/><br/>
 
-> *Your agents walk around pixel-art office rooms, show speech bubbles when thinking, and pass glowing message particles between teams. One `pip install` and you're watching.*
+**The observability dashboard your agents actually make you *want* to watch.**
 
-**[Watch full demo videos](https://github.com/RevanKumarD/pixelpulse/releases/tag/demo-v1)** — 3 scenarios: Software Dev Team, Creative Agency, Data Science Lab
+<br/>
+
+<a href="https://pypi.org/project/pixelpulse-dashboard/"><img src="https://img.shields.io/pypi/v/pixelpulse-dashboard.svg?style=flat-square&logo=python&logoColor=white&label=PyPI&color=3b82f6" alt="PyPI" /></a>&nbsp;
+<a href="https://pypi.org/project/pixelpulse-dashboard/"><img src="https://img.shields.io/pypi/pyversions/pixelpulse-dashboard.svg?style=flat-square&label=Python&color=3b82f6" alt="Python" /></a>&nbsp;
+<a href="https://marketplace.visualstudio.com/items?itemName=revankumard.pixelpulse"><img src="https://img.shields.io/visual-studio-marketplace/v/revankumard.pixelpulse?style=flat-square&logo=visual-studio-code&logoColor=white&label=VS%20Code&color=8b5cf6" alt="VS Code" /></a>&nbsp;
+<a href="https://github.com/RevanKumarD/pixelpulse/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/RevanKumarD/pixelpulse/ci.yml?style=flat-square&logo=github&label=CI&color=22c55e" alt="CI" /></a>&nbsp;
+<img src="https://img.shields.io/badge/tests-505%20passing-22c55e?style=flat-square" alt="Tests" />&nbsp;
+<a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-64748b?style=flat-square" alt="License" /></a>
+
+<br/><br/>
+
+<img src="tests/visual/demo-preview.gif" alt="PixelPulse — agents thinking, messages flowing, costs tracking" width="820" style="image-rendering: pixelated; border-radius: 8px;" />
+
+<br/>
+
+> *Agents walk around pixel-art rooms, show speech bubbles when thinking,*
+> *pass glowing particles between teams, and track cost per token — live.*
+
+<br/>
+
+<kbd>&nbsp; Install &nbsp;</kbd>&ensp;
+<kbd>&nbsp; Quick Start &nbsp;</kbd>&ensp;
+<kbd>&nbsp; 8 Adapters &nbsp;</kbd>&ensp;
+<kbd>&nbsp; Screenshots &nbsp;</kbd>&ensp;
+<kbd>&nbsp; API &nbsp;</kbd>&ensp;
+<kbd>&nbsp; Roadmap &nbsp;</kbd>
+
+<br/>
+
+[Demo Videos](https://github.com/RevanKumarD/pixelpulse/releases/tag/demo-v1) ·
+[VS Code Extension](https://marketplace.visualstudio.com/items?itemName=revankumard.pixelpulse) ·
+[PyPI](https://pypi.org/project/pixelpulse-dashboard/) ·
+[Issues](https://github.com/RevanKumarD/pixelpulse/issues) ·
+[Contributing](CONTRIBUTING.md)
+
+</div>
+
+<br/>
 
 ---
 
-## Why PixelPulse?
+<br/>
 
-You're running a multi-agent pipeline. Something stalls. Which agent failed? What was it thinking? Where did the handoff break?
+## &#x1F52D; The Problem
 
-Your options today: grep through JSON logs, wait for post-run traces in Langfuse/AgentOps, or stare at terminal output. None of these tell you what's happening *right now*.
+You're running a multi-agent pipeline. Something stalls. Which agent? What was it thinking?
 
-PixelPulse gives you a **live dashboard** — see who's active, read their reasoning in speech bubbles, watch messages fly between teams, and track costs per token — all in real time. It works with any Python agent framework, or none at all.
+<table>
+<tr>
+<th width="50%">&#x1F534;&ensp;What exists today</th>
+<th width="50%">&#x1F7E2;&ensp;What's missing</th>
+</tr>
+<tr>
+<td>
+
+<kbd>Langfuse / AgentOps / Arize</kbd><br/>
+Post-run traces — you find out *after* it fails
+
+<kbd>Terminal output</kbd><br/>
+Wall of text — no spatial awareness of who's where
+
+<kbd>Custom JSON logging</kbd><br/>
+Grep soup — no visual indication of data flow
+
+<kbd>Grafana dashboards</kbd><br/>
+Metrics without semantics — latency, not *reasoning*
+
+</td>
+<td>
+
+**PixelPulse fills the gap:**
+
+&#x2714; See *who* is active — spatially, in real time<br/>
+&#x2714; Read *what* they're thinking — speech bubbles<br/>
+&#x2714; Watch *where* data flows — glowing particles<br/>
+&#x2714; Track *how much* it costs — live token counters<br/>
+&#x2714; Know *which stage* you're in — pipeline tracker<br/>
+&#x2714; Works with **any** Python agent framework
+
+</td>
+</tr>
+</table>
+
+<br/>
 
 ---
 
-## Install
+<br/>
+
+## &#x26A1; Install
 
 ```bash
-pip install pixelpulse
+pip install pixelpulse-dashboard
 ```
 
-Works on **macOS, Linux, and Windows** (Python 3.10+).
+That's it. No API keys. No config files. No Docker required.
+
+<details>
+<summary>&ensp;&#x1F4E6;&ensp;<strong>Framework extras</strong></summary>
+
+<br/>
+
+```bash
+pip install "pixelpulse-dashboard[langgraph]"    # LangGraph
+pip install "pixelpulse-dashboard[crewai]"       # CrewAI
+pip install "pixelpulse-dashboard[openai]"       # OpenAI Agents SDK
+pip install "pixelpulse-dashboard[autogen]"      # AutoGen
+pip install "pixelpulse-dashboard[otel]"         # OpenTelemetry
+pip install "pixelpulse-dashboard[all]"          # Everything
+```
+
+</details>
+
+<br/>
+
+> Works on **macOS**, **Linux**, and **Windows** &mdash; Python 3.10+
+
+<br/>
 
 ---
 
-## Quick Start
+<br/>
+
+## &#x1F680; 30-Second Start
 
 ```python
 from pixelpulse import PixelPulse
@@ -52,361 +151,376 @@ pp = PixelPulse(
     },
     pipeline=["research", "content"],
 )
-pp.serve()  # → http://localhost:8765
+pp.serve()  # --> http://localhost:8765
 ```
 
-Then emit events from your agent code:
-
 ```python
+# From your agent code — anywhere, any framework
 pp.agent_started("researcher", task="Searching for trends")
 pp.agent_thinking("researcher", thought="Found 3 promising niches...")
 pp.agent_message("researcher", "writer", content="Top pick: eco-denim", tag="data")
-pp.cost_update("researcher", cost=0.003, tokens_in=1200, tokens_out=400)
 pp.agent_completed("researcher", output="Research complete")
 ```
 
-Open `http://localhost:8765` — your agents appear as pixel-art characters in their team rooms.
+Open `localhost:8765`. Your agents are walking around their office.
+
+<br/>
 
 ---
 
-## What You See
+<br/>
 
-![Agents at work — 4 teams, pipeline tracker, event log, cost counter](tests/visual/screenshots/03_demo_active_13s.png)
+## &#x1F3A8; See It in Action
+
+<div align="center">
+<img src="tests/visual/screenshots/03_demo_active_13s.png" alt="Active dashboard" width="820" style="border-radius: 6px;" />
+<br/><br/>
+<sub><strong>4 teams active</strong> · pipeline progressing · event log streaming · cost tracking live</sub>
+</div>
+
+<br/>
 
 <table>
 <tr>
 <td width="50%">
 
-**Pixel-art agents** — Animated characters that walk, work at desks, and roam their furnished office rooms with warm lighting and team-colored accents.
+&#x1F3AD; **Pixel-art agents**<br/>
+<sub>Characters walk, sit at desks, roam furnished rooms with warm lighting and team-colored accents. Not a static grid — they <em>move</em>.</sub>
 
-**Speech bubbles** — Agent reasoning and messages appear as word-wrapped bubbles above each character as they think and communicate.
+&#x1F4AC; **Speech bubbles**<br/>
+<sub>See exactly what each agent is thinking, not buried in logs. Word-wrapped, positioned, real-time.</sub>
 
-**Message particles** — Glowing dots fly between agents across rooms when messages are sent, showing data flow in real time.
+&#x2728; **Message particles**<br/>
+<sub>Glowing dots fly between rooms when agents communicate. You see data flow <em>spatially</em>.</sub>
 
-**Pipeline tracker** — Central orchestrator bar shows which stage is active, with progress indicators for each pipeline phase.
+&#x1F4CA; **Pipeline tracker**<br/>
+<sub>Orchestrator bar shows which stage is active with progress indicators.</sub>
 
 </td>
 <td width="50%">
 
-**Cost counter** — Live per-agent and total cost with token breakdown (input/output), updated as each LLM call completes.
+&#x1F4B0; **Live cost counter**<br/>
+<sub>Per-agent and total cost with token breakdown. Updated on every LLM call.</sub>
 
-**Event log** — Timestamped, searchable, filterable log of all agent events with color-coded type badges.
+&#x1F4DC; **Rich event log**<br/>
+<sub>Timestamped, searchable, filterable. Color-coded type badges. Exportable as JSON.</sub>
 
-**Focus mode** — Double-click any room to zoom in and inspect individual agents. ESC to return.
+&#x1F50D; **Focus mode**<br/>
+<sub>Double-click any room to zoom in. Minimap shows position. ESC to return.</sub>
 
-**Dark + Light themes** — Full theme toggle with pixel-art aesthetic in both modes.
+&#x1F464; **Agent detail panel**<br/>
+<sub>Click any agent for 4-tab deep dive: overview, messages, reasoning, performance.</sub>
 
 </td>
 </tr>
 </table>
 
-### Message Flow
+<details>
+<summary>&ensp;&#x1F5BC;&ensp;<strong>Screenshot gallery</strong></summary>
 
-Agents communicate across rooms with glowing particles, speech bubbles, and a rich event log:
+<br/>
 
-![Message flow — particles between rooms, speech bubbles, event log](tests/visual/screenshots/20_api_message_particle.png)
+<table>
+<tr>
+<td align="center"><img src="tests/visual/screenshots/20_api_message_particle.png" width="380" /><br/><sub>Message particles between rooms</sub></td>
+<td align="center"><img src="tests/visual/screenshots/05_agent_detail_overview.png" width="380" /><br/><sub>Agent detail panel (4 tabs)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="tests/visual/screenshots/15_zoomed_in.png" width="380" /><br/><sub>Focus mode with minimap</sub></td>
+<td align="center"><img src="tests/visual/screenshots/13_light_theme.png" width="380" /><br/><sub>Light theme</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="tests/visual/screenshots/16_fit_view.png" width="380" /><br/><sub>Flow connectors (press F)</sub></td>
+<td align="center"><img src="tests/visual/screenshots/12_settings_panel.png" width="380" /><br/><sub>Settings panel</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="tests/visual/screenshots/18_run_history_section.png" width="380" /><br/><sub>Persistent run history</sub></td>
+<td align="center"><img src="tests/visual/screenshots/14_keyboard_help.png" width="380" /><br/><sub>Keyboard shortcuts overlay</sub></td>
+</tr>
+</table>
 
-### Focus Mode
+</details>
 
-Double-click any room to zoom in. A minimap appears showing your position. Press ESC or 0 to return:
-
-![Focus mode — zoomed into room with minimap](tests/visual/screenshots/15_zoomed_in.png)
-
-### Flow Connectors
-
-Press `F` to show dashed pipeline arrows between rooms, visualizing the data flow path:
-
-![Flow connectors — dashed arrows between rooms](tests/visual/screenshots/16_fit_view.png)
-
-### Light Theme
-
-Toggle between dark and light themes:
-
-![Light theme](tests/visual/screenshots/13_light_theme.png)
+<br/>
 
 ---
 
-## Framework Adapters
+<br/>
 
-PixelPulse integrates with all major agent frameworks. Pick the one that matches your stack:
+## &#x1F50C; Plug Into Any Framework
 
-| Framework | Adapter | How it works |
-|-----------|---------|--------------|
-| **LangGraph** | `pp.adapter("langgraph")` | Wraps `graph.invoke/ainvoke`, auto-maps nodes to agents |
-| **CrewAI** | `pp.adapter("crewai")` | Patches `crew.kickoff()`, `step_callback`, `task_callback` |
-| **AutoGen** (agentchat) | `pp.adapter("autogen")` | Wraps `team.run_stream()` async generator |
-| **OpenAI Agents SDK** | `pp.adapter("openai")` | Registers a `TracingProcessor` (no code changes needed) |
-| **@observe decorator** | `from pixelpulse.decorators import observe` | Decorator-based, framework-agnostic |
-| **OpenTelemetry (OTEL)** | Built-in endpoint | POST GenAI spans to `/v1/traces` |
-| **Claude Code hooks** | Built-in endpoint | POST hooks to `/hooks/claude-code` |
-| **Generic / Manual** | Direct `pp.*()` calls | Works with any Python agent system |
+PixelPulse isn't tied to one agent framework. **2 lines of code. 8 frameworks.**
 
-### LangGraph
+<br/>
 
+<table>
+<tr>
+<th>Framework</th>
+<th>Integration</th>
+<th align="center">Lines to add</th>
+</tr>
+<tr>
+<td><strong>LangGraph</strong></td>
+<td><code>pp.adapter("langgraph").instrument(graph)</code></td>
+<td align="center"><kbd>&nbsp;2&nbsp;</kbd></td>
+</tr>
+<tr>
+<td><strong>CrewAI</strong></td>
+<td><code>pp.adapter("crewai").instrument(crew)</code></td>
+<td align="center"><kbd>&nbsp;2&nbsp;</kbd></td>
+</tr>
+<tr>
+<td><strong>AutoGen</strong></td>
+<td><code>pp.adapter("autogen").instrument(team)</code></td>
+<td align="center"><kbd>&nbsp;2&nbsp;</kbd></td>
+</tr>
+<tr>
+<td><strong>OpenAI Agents SDK</strong></td>
+<td><code>pp.adapter("openai").instrument()</code></td>
+<td align="center"><kbd>&nbsp;2&nbsp;</kbd></td>
+</tr>
+<tr>
+<td><strong>Claude Code</strong></td>
+<td><code>claude plugin add plugins/claude-code</code></td>
+<td align="center"><kbd>&nbsp;0&nbsp;</kbd></td>
+</tr>
+<tr>
+<td><strong>OpenTelemetry</strong></td>
+<td>Set <code>OTEL_EXPORTER_OTLP_ENDPOINT</code> env var</td>
+<td align="center"><kbd>&nbsp;0&nbsp;</kbd></td>
+</tr>
+<tr>
+<td><strong>@observe</strong></td>
+<td><code>@observe(pp, as_type="agent")</code></td>
+<td align="center"><kbd>&nbsp;1&nbsp;</kbd></td>
+</tr>
+<tr>
+<td><strong>Any Python</strong></td>
+<td>Direct <code>pp.agent_*()</code> calls</td>
+<td align="center"><kbd>&nbsp;~&nbsp;</kbd></td>
+</tr>
+</table>
+
+<details>
+<summary>&ensp;&#x1F4BB;&ensp;<strong>Full adapter examples</strong></summary>
+
+<br/>
+
+**LangGraph**
 ```python
 adapter = pp.adapter("langgraph")
 adapter.instrument(compiled_graph)
-result = graph.invoke({"topic": "AI trends"})
+result = graph.invoke({"topic": "AI trends"})  # all nodes visualized automatically
 ```
 
-### CrewAI
-
+**CrewAI**
 ```python
 adapter = pp.adapter("crewai")
 adapter.instrument(crew)
-crew.kickoff()
+crew.kickoff()  # step_callback and task_callback patched
 ```
 
-### AutoGen
-
-```python
-adapter = pp.adapter("autogen")
-adapter.instrument(team)
-async for msg in team.run_stream(task="Research AI trends"):
-    pass
-```
-
-### OpenAI Agents SDK
-
+**OpenAI Agents SDK**
 ```python
 adapter = pp.adapter("openai")
-adapter.instrument()  # registers globally — no other changes needed
+adapter.instrument()  # registers TracingProcessor globally — zero other changes
 result = Runner.run_sync(agent, "What are the latest AI agent frameworks?")
 ```
 
-### @observe Decorator
-
+**@observe Decorator**
 ```python
 from pixelpulse.decorators import observe
 
 @observe(pp, as_type="agent", name="researcher")
 def research(query: str) -> str:
-    return call_llm(query)  # start/complete events emitted automatically
-
-@observe(pp, as_type="tool", name="web-search")
-def search(q: str) -> str:
-    return fetch_results(q)  # thinking + artifact events
+    return call_llm(query)  # start/thinking/complete events emitted automatically
 ```
 
-### OpenTelemetry
+**Claude Code Plugin**
+```bash
+claude plugin add /path/to/pixelpulse/plugins/claude-code
+```
+Auto-registers all 7 lifecycle hooks, auto-starts the server, adds 6 MCP tools for querying session stats, cost breakdowns, and subagent trees. See [plugins/claude-code/README.md](plugins/claude-code/README.md).
 
-Any framework that exports OTEL GenAI spans works automatically:
-
+**OpenTelemetry**
 ```bash
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:8765 python my_agents.py
 ```
 
-### Claude Code Plugin (Recommended)
+</details>
 
-Install the PixelPulse plugin for automatic hook registration, MCP tools, and session analytics:
-
-```bash
-claude plugin add /path/to/pixelpulse/plugins/claude-code
-```
-
-This gives you:
-- **Auto-registered hooks** — All 7 lifecycle events (SessionStart → SessionEnd) stream to the dashboard
-- **Auto-start server** — Dashboard launches on first SessionStart
-- **6 MCP tools** — `get_session_stats`, `get_cost_breakdown`, `get_subagent_tree`, `get_recent_tool_calls`, `get_active_agents`, `get_session_events`
-- **Session analyzer agent** — `/session-analyzer` for efficiency insights
-
-See [plugins/claude-code/README.md](plugins/claude-code/README.md) for configuration.
-
-### Claude Code Hooks (Manual)
-
-Or add hooks manually to `.claude/settings.json`:
-
-```json
-{
-  "hooks": {
-    "PreToolUse":  [{"matcher": "*", "hooks": [{"type": "command", "command": "curl -s -X POST http://localhost:8765/hooks/claude-code -H 'Content-Type: application/json' -d @-"}]}],
-    "PostToolUse": [{"matcher": "*", "hooks": [{"type": "command", "command": "curl -s -X POST http://localhost:8765/hooks/claude-code -H 'Content-Type: application/json' -d @-"}]}]
-  }
-}
-```
+<br/>
 
 ---
 
-## Configuration
+<br/>
+
+## &#x1F4E1; The Full API
+
+<table>
+<tr>
+<td width="50%">
+
+**Python Events**
+
+```python
+# Lifecycle
+pp.run_started(run_id, name="Pipeline run")
+pp.run_completed(run_id, total_cost=0.042)
+pp.stage_entered("research")
+
+# Agent state
+pp.agent_started(id, task="...")
+pp.agent_thinking(id, thought="...")
+pp.agent_completed(id, output="...")
+pp.agent_error(id, error="...")
+
+# Communication
+pp.agent_message(from_, to, content="...")
+pp.cost_update(id, cost=0.005,
+    tokens_in=1000, tokens_out=300)
+pp.artifact_created(id, artifact_type="code",
+    content="...")
+```
+
+</td>
+<td width="50%">
+
+**HTTP / WebSocket**
+
+```
+GET  /api/health        Health check
+GET  /api/events        Last 50 events
+GET  /api/config        Teams, agents, pipeline
+WS   /ws/events         Real-time stream
+POST /v1/traces         OTEL span ingestion
+POST /hooks/claude-code Hook endpoint
+```
+
+<br/>
+
+**Configuration**
 
 ```python
 pp = PixelPulse(
-    agents={
-        "agent-id": {
-            "team": "team-id",        # which room to place agent in
-            "role": "Role description", # shown in agent card
-        }
-    },
-    teams={
-        "team-id": {
-            "label": "Display Name",   # room header label
-            "color": "#00d4ff",        # room accent color (hex)
-        }
-    },
-    pipeline=["stage-a", "stage-b"],   # ordered list of pipeline stages
-    title="My Dashboard",              # browser tab title
+    agents={"id": {"team": "t", "role": "R"}},
+    teams={"t": {"label": "Name", "color": "#hex"}},
+    pipeline=["stage-a", "stage-b"],
+    title="My Dashboard",
 )
-
-pp.serve(port=8765, open_browser=True)  # start dashboard
+pp.serve(port=8765, open_browser=True)
 ```
 
-### Event API
+</td>
+</tr>
+</table>
 
-```python
-# Run lifecycle
-pp.run_started(run_id, name="Run name")
-pp.run_completed(run_id, status="completed", total_cost=0.01)
-pp.stage_entered(stage_name, run_id=run_id)
-pp.stage_exited(stage_name, run_id=run_id)
-
-# Agent events
-pp.agent_started(agent_id, task="What the agent is doing")
-pp.agent_thinking(agent_id, thought="Agent's internal reasoning")
-pp.agent_completed(agent_id, output="What the agent produced")
-pp.agent_error(agent_id, error="Error message")
-
-# Communication
-pp.agent_message(from_agent, to_agent, content="Message text", tag="data")
-pp.cost_update(agent_id, cost=0.005, tokens_in=1000, tokens_out=300, model="gpt-4o-mini")
-pp.artifact_created(agent_id, artifact_type="text", content="Output content")
-```
-
-### HTTP API
-
-```
-GET  /api/health          → {"status": "ok"}
-GET  /api/events          → last 50 dashboard events
-GET  /api/config          → teams, agents, pipeline config
-WS   /ws/events           → real-time event stream
-POST /v1/traces           → OTEL span ingestion
-POST /hooks/claude-code   → Claude Code hook endpoint
-```
+<br/>
 
 ---
 
-## Setup by Platform
+<br/>
 
-### macOS / Linux
+## &#x2699; Under the Hood
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install pixelpulse
+<table>
+<tr><th>Layer</th><th>Tech</th><th>Purpose</th></tr>
+<tr><td><strong>Server</strong></td><td>FastAPI + WebSockets</td><td>Event ingestion, REST API, real-time push</td></tr>
+<tr><td><strong>Storage</strong></td><td>SQLite via aiosqlite</td><td>Persistent run history, event replay</td></tr>
+<tr><td><strong>Renderer</strong></td><td>Canvas 2D</td><td>60fps pixel-art: sprites, pathfinding, particles</td></tr>
+<tr><td><strong>Adapters</strong></td><td>Protocol-based</td><td>Thin per-framework translation layer (~100 LOC each)</td></tr>
+<tr><td><strong>Plugins</strong></td><td>MCP + hooks</td><td>Claude Code, VS Code, Codex, Gemini CLI</td></tr>
+</table>
 
-# With framework extras:
-pip install "pixelpulse[langgraph]"   # LangGraph
-pip install "pixelpulse[otel]"        # OpenTelemetry
-```
-
-### Windows
-
-```powershell
-python -m venv .venv
-.venv\Scripts\activate
-pip install pixelpulse
-```
-
-### Docker
-
-```bash
-docker run -p 8765:8765 pixelpulse/pixelpulse
-```
-
-Or with docker-compose:
-
-```yaml
-services:
-  pixelpulse:
-    image: pixelpulse/pixelpulse
-    ports:
-      - "8765:8765"
-    environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-    volumes:
-      - ./my_agents.py:/app/my_agents.py
-    command: python /app/my_agents.py
-```
+<br/>
 
 ---
 
-## Keyboard Shortcuts
+<br/>
 
-| Key | Action |
-|-----|--------|
-| `F` | Toggle flow connectors |
-| `M` | Toggle minimap |
-| `T` | Filter teams |
-| `0` / `ESC` | Fit all rooms in view |
-| `+` / `-` | Zoom in / out |
-| `H` | Help overlay |
-| Double-click room | Focus mode |
+## &#x2328; Keyboard Shortcuts
 
----
+<div align="center">
 
-## Dashboard Features
+<kbd>F</kbd> Flow connectors &ensp;
+<kbd>M</kbd> Minimap &ensp;
+<kbd>T</kbd> Team filter &ensp;
+<kbd>H</kbd> Help overlay &ensp;
+<kbd>+</kbd> <kbd>-</kbd> Zoom &ensp;
+<kbd>0</kbd> / <kbd>ESC</kbd> Fit view &ensp;
+<kbd>Double-click</kbd> Focus mode
 
-| Feature | Details |
-|---------|---------|
-| **Room sizing** | Uniform, Adaptive (scales by agent count), or Compact layout modes |
-| **Collapsible rooms** | Click team label to collapse to a compact badge |
-| **Resizable panels** | Drag sidebar and bottom bar edges to resize |
-| **Settings panel** | Gear icon opens full settings: scanlines, font scale, connectors, room sizing |
-| **Screenshot export** | Camera button exports the canvas as PNG |
-| **Event export** | Download all events as JSON for offline analysis |
-| **Demo mode** | Built-in demo with speed control (1x-10x) to showcase features |
+</div>
+
+<br/>
 
 ---
 
-## Test Coverage
+<br/>
 
-505 tests across 5 layers:
+## &#x1F9EA; Test Coverage
+
+<sub>505 tests across 6 layers — not just unit tests:</sub>
 
 | Layer | Count | What it proves |
-|-------|-------|----------------|
-| Unit | 270+ | Adapter logic, decorators, protocol, event bus, storage models |
-| E2E (graph-level) | 35 | Real LangGraph/OpenAI pipelines with mocked pp boundary |
-| Integration | 25+ | `pp.agent_started()` → EventBus → `/api/events` wiring + plugin hook→event flow + storage lifecycle |
-| Functional | 52 | All 7 adapter paths → real pp → bus → HTTP, no mocks |
-| Plugin | 22 | Hook handler parsing, ensure_server, MCP aggregation functions |
-| Visual | 17 | Playwright screenshots: idle, demo, detail panel, themes, API pipeline, errors |
+|:------|------:|:---------------|
+| **Unit** | 270+ | Adapter logic, decorators, protocol, event bus, storage |
+| **E2E** | 35 | Real LangGraph/OpenAI pipelines (mocked at pp boundary) |
+| **Integration** | 25+ | `pp.agent_started()` &rarr; EventBus &rarr; `/api/events` wiring |
+| **Functional** | 52 | All 7 adapters &rarr; real pp &rarr; bus &rarr; HTTP, zero mocks |
+| **Plugin** | 22 | Hook handler, ensure_server, MCP aggregation |
+| **Visual** | 17 | Playwright screenshots: idle, active, themes, errors |
+
+<br/>
 
 ---
 
-## Roadmap
+<br/>
 
-### v0.3 — Usability (current)
-- [x] Agent click → detail panel with event history (4 tabs)
-- [x] Readable fonts at all zoom levels
-- [x] Enhanced office visuals (lighting, furniture, carpets)
-- [x] Claude Code plugin with hooks, MCP server, and session analytics
-- [x] Persistent run history with SQLite backend
-- [x] Run replay engine with playback controls
-- [x] Video export (WebM recording of dashboard)
-- [x] Accurate per-MTok pricing for all major providers (March 2026)
-- [x] OpenTelemetry GenAI semantic conventions ingestion
+## &#x1F5FA; Roadmap
 
-### v0.4 — Distribution (next)
-- [ ] VS Code extension (watch your Claude Code session live)
-- [ ] Codex CLI / Gemini CLI plugin packages
-- [ ] PyPI stable release with versioned API
-- [ ] Cost alerting thresholds
+**v0.3 &mdash; Usability** *(current)*
 
-### v0.5 — Integrations
-- [ ] Langchain adapter
-- [ ] Semantic Kernel adapter
-- [ ] n8n workflow integration
+&ensp; &#x2705; Agent detail panel &middot; Claude Code plugin &middot; SQLite run history &middot; Replay engine
+<br/>
+&ensp; &#x2705; Video export &middot; OTEL ingestion &middot; VS Code extension &middot; PyPI package
 
-### v1.0 — Scale
-- [ ] Multi-session dashboard (compare runs side-by-side)
-- [ ] Hosted cloud option (optional, privacy-first)
-- [ ] Custom sprite packs
+**v0.4 &mdash; Distribution** *(next)*
+
+&ensp; &#x2B1C; Codex / Gemini CLI plugins &middot; Cost alerting &middot; Custom sprite packs
+
+**v0.5 &mdash; Integrations**
+
+&ensp; &#x2B1C; Langchain &middot; Semantic Kernel &middot; n8n workflow
+
+**v1.0 &mdash; Scale**
+
+&ensp; &#x2B1C; Multi-session dashboard &middot; Cloud option &middot; 3D visualization
+
+<br/>
 
 ---
 
-## Contributing
+<br/>
+
+## &#x1F91D; Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, test instructions, and how to write a new adapter.
 
-## License
+<br/>
 
-Apache-2.0 — [RevanKumarD/pixelpulse](https://github.com/RevanKumarD/pixelpulse)
+---
+
+<div align="center">
+
+<br/>
+
+**Apache-2.0** &mdash; Built by [Revan Kumar D](https://github.com/RevanKumarD)
+
+<br/>
+
+<sub>If PixelPulse helps you debug your agents faster, consider giving it a &#x2B50;</sub>
+
+<br/><br/>
+
+</div>

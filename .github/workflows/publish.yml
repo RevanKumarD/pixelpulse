@@ -1,4 +1,4 @@
-name: Publish to PyPI
+name: Publish
 
 on:
   release:
@@ -43,3 +43,15 @@ jobs:
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+
+  publish-vscode:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Package and publish VS Code extension
+        working-directory: plugins/vscode
+        run: npx @vscode/vsce publish -p ${{ secrets.VSCE_PAT }}
