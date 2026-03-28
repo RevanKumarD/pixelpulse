@@ -24,19 +24,31 @@ logger = logging.getLogger(__name__)
 # Sorted longest-prefix-first so "gpt-4o-mini" matches before "gpt-4o"
 # Per-million-token pricing (input, output) — March 2026
 # Sources: openai.com/api/pricing, platform.openai.com/docs/pricing
+# NOTE: Prefix matching — longer prefixes MUST come before shorter ones
 _TOKEN_COSTS_MTK: dict[str, tuple[float, float]] = {
-    # GPT-4.1 family
-    "gpt-4.1-nano": (0.10, 0.40),
-    "gpt-4.1-mini": (0.40, 1.60),
-    "gpt-4.1":      (2.00, 8.00),
-    # GPT-4o family
-    "gpt-4o-mini":  (0.15, 0.60),
-    "gpt-4o":       (2.50, 10.00),
+    # GPT-5.4 family (latest — March 5, 2026)
+    "gpt-5.4-nano":  (0.20, 1.25),
+    "gpt-5.4-mini":  (0.75, 4.50),
+    "gpt-5.4-pro":   (30.00, 180.00),
+    "gpt-5.4":       (2.50, 15.00),
+    # GPT-5.3
+    "gpt-5.3-codex": (2.00, 10.00),
+    "gpt-5.3":       (2.00, 10.00),
+    # GPT-5.2
+    "gpt-5.2":       (1.75, 14.00),
+    # GPT-5 base + mini
+    "gpt-5-mini":    (0.25, 2.00),
+    "gpt-5":         (1.25, 10.00),
+    # GPT-4.1 family (still available)
+    "gpt-4.1-nano":  (0.10, 0.40),
+    "gpt-4.1-mini":  (0.40, 1.60),
+    "gpt-4.1":       (2.00, 8.00),
     # o-series reasoning
-    "o4-mini":      (1.10, 4.40),
-    "o3":           (2.00, 8.00),
-    # GPT-5
-    "gpt-5":        (2.00, 8.00),      # placeholder — update when released
+    "o4-mini":       (1.10, 4.40),
+    "o3":            (2.00, 8.00),
+    # GPT-4o (legacy)
+    "gpt-4o-mini":   (0.15, 0.60),
+    "gpt-4o":        (2.50, 10.00),
 }
 
 

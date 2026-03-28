@@ -164,25 +164,35 @@ def validate_event(event: dict) -> list[str]:
 # Fallback cost estimation for adapters that send tokens but not cost.
 # Per-million-token pricing (input, output) — March 2026
 _FALLBACK_COSTS: dict[str, tuple[float, float]] = {
-    # Anthropic
-    "claude-opus-4": (5.0, 25.0),
+    # ── Anthropic Claude (March 2026) ──
+    "claude-opus-4":   (5.0, 25.0),
     "claude-sonnet-4": (3.0, 15.0),
-    "claude-haiku-4": (1.0, 5.0),
+    "claude-haiku-4":  (1.0, 5.0),
     "claude-3.5-sonnet": (3.0, 15.0),
-    "claude-3-opus": (15.0, 75.0),
-    # OpenAI
-    "gpt-4.1-nano": (0.10, 0.40),
-    "gpt-4.1-mini": (0.40, 1.60),
-    "gpt-4.1": (2.00, 8.00),
-    "gpt-4o-mini": (0.15, 0.60),
-    "gpt-4o": (2.50, 10.00),
-    "o4-mini": (1.10, 4.40),
-    "o3": (2.00, 8.00),
-    # Google
-    "gemini-2.5-pro": (1.25, 10.00),
+    "claude-3-opus":   (15.0, 75.0),
+    # ── OpenAI GPT-5.x (March 2026) ──
+    "gpt-5.4-nano":  (0.20, 1.25),
+    "gpt-5.4-mini":  (0.75, 4.50),
+    "gpt-5.4-pro":   (30.00, 180.00),
+    "gpt-5.4":       (2.50, 15.00),
+    "gpt-5.3":       (2.00, 10.00),
+    "gpt-5.2":       (1.75, 14.00),
+    "gpt-5-mini":    (0.25, 2.00),
+    "gpt-5":         (1.25, 10.00),
+    # ── OpenAI GPT-4.x ──
+    "gpt-4.1-nano":  (0.10, 0.40),
+    "gpt-4.1-mini":  (0.40, 1.60),
+    "gpt-4.1":       (2.00, 8.00),
+    "o4-mini":       (1.10, 4.40),
+    "o3":            (2.00, 8.00),
+    # ── Google Gemini 3.x (March 2026) ──
+    "gemini-3.1-flash-lite": (0.25, 1.50),
+    "gemini-3.1-pro":  (2.00, 12.00),
+    "gemini-3-flash":  (0.50, 3.00),
+    "gemini-2.5-pro":  (1.25, 10.00),
     "gemini-2.5-flash": (0.15, 0.60),
-    # DeepSeek
-    "deepseek": (0.28, 0.42),
+    # ── DeepSeek V3.2 ──
+    "deepseek":        (0.28, 0.42),
 }
 
 

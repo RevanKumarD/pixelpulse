@@ -22,28 +22,42 @@ logger = logging.getLogger(__name__)
 # Per-million-token pricing (input, output) — March 2026
 # CrewAI can use any LLM provider, so we cover all major models.
 # Sources: docs.anthropic.com, openai.com/api/pricing, ai.google.dev, api-docs.deepseek.com
+# NOTE: Longer prefixes MUST come before shorter ones for correct matching
 _TOKEN_COSTS_MTK: dict[str, tuple[float, float]] = {
-    # OpenAI
-    "gpt-4.1-nano":   (0.10, 0.40),
-    "gpt-4.1-mini":   (0.40, 1.60),
-    "gpt-4.1":        (2.00, 8.00),
-    "gpt-4o-mini":    (0.15, 0.60),
-    "gpt-4o":         (2.50, 10.00),
-    "gpt-4-turbo":    (10.00, 30.00),
-    "o4-mini":        (1.10, 4.40),
-    "o3":             (2.00, 8.00),
-    # Anthropic
+    # ── OpenAI GPT-5.x (latest) ──
+    "gpt-5.4-nano":    (0.20, 1.25),
+    "gpt-5.4-mini":    (0.75, 4.50),
+    "gpt-5.4-pro":     (30.00, 180.00),
+    "gpt-5.4":         (2.50, 15.00),
+    "gpt-5.3-codex":   (2.00, 10.00),
+    "gpt-5.3":         (2.00, 10.00),
+    "gpt-5.2":         (1.75, 14.00),
+    "gpt-5-mini":      (0.25, 2.00),
+    "gpt-5":           (1.25, 10.00),
+    # ── OpenAI GPT-4.x (still available) ──
+    "gpt-4.1-nano":    (0.10, 0.40),
+    "gpt-4.1-mini":    (0.40, 1.60),
+    "gpt-4.1":         (2.00, 8.00),
+    "gpt-4o-mini":     (0.15, 0.60),
+    "gpt-4o":          (2.50, 10.00),
+    "o4-mini":         (1.10, 4.40),
+    "o3":              (2.00, 8.00),
+    # ── Anthropic Claude ──
     "claude-opus-4":   (5.0, 25.0),
     "claude-sonnet-4": (3.0, 15.0),
     "claude-haiku-4":  (1.0, 5.0),
     "claude-3.5-sonnet": (3.0, 15.0),
     "claude-3.5-haiku":  (0.80, 4.0),
     "claude-3-opus":   (15.0, 75.0),
-    # Google Gemini
+    # ── Google Gemini 3.x (latest) ──
+    "gemini-3.1-flash-lite": (0.25, 1.50),
+    "gemini-3.1-pro":  (2.00, 12.00),
+    "gemini-3-flash":  (0.50, 3.00),
+    # ── Google Gemini 2.x (still available) ──
     "gemini-2.5-pro":  (1.25, 10.00),
     "gemini-2.5-flash": (0.15, 0.60),
     "gemini-2.0-flash": (0.10, 0.40),
-    # DeepSeek
+    # ── DeepSeek ──
     "deepseek":        (0.28, 0.42),
 }
 
