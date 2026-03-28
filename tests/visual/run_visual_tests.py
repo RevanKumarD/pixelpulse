@@ -55,26 +55,26 @@ def _start_server():
 
     pp = PixelPulse(
         agents={
-            "signal-scout": {"team": "research", "role": "Trend discovery & signal intake"},
-            "emotion-mapper": {"team": "research", "role": "Emotional resonance analysis"},
-            "niche-scorer": {"team": "research", "role": "Market niche scoring"},
-            "brief-writer": {"team": "research", "role": "Brief synthesis"},
-            "brief-expander": {"team": "design", "role": "Creative brief expansion"},
-            "image-generator": {"team": "design", "role": "AI image generation"},
-            "design-reviewer": {"team": "design", "role": "Design QA & review"},
-            "listing-writer": {"team": "commerce", "role": "Product listing creation"},
-            "market-localizer": {"team": "commerce", "role": "Market localization DE→EN"},
-            "feedback-distiller": {"team": "learning", "role": "Customer feedback analysis"},
-            "memory-curator": {"team": "learning", "role": "Brand memory management"},
+            "planner": {"team": "planning", "role": "Breaks down tasks into subtasks"},
+            "researcher": {"team": "planning", "role": "Gathers context and prior art"},
+            "architect": {"team": "engineering", "role": "Designs system architecture"},
+            "frontend-dev": {"team": "engineering", "role": "Builds UI components"},
+            "backend-dev": {"team": "engineering", "role": "Implements API and services"},
+            "db-engineer": {"team": "engineering", "role": "Schema design and queries"},
+            "code-reviewer": {"team": "quality", "role": "Reviews code for issues"},
+            "test-writer": {"team": "quality", "role": "Writes unit and integration tests"},
+            "security-auditor": {"team": "quality", "role": "Security vulnerability scanning"},
+            "tech-writer": {"team": "docs", "role": "API documentation and guides"},
+            "deploy-agent": {"team": "docs", "role": "CI/CD pipeline and deployment"},
         },
         teams={
-            "research": {"label": "Research", "color": "#00d4ff", "icon": "🔍"},
-            "design": {"label": "Design", "color": "#ff6ec7", "icon": "🎨"},
-            "commerce": {"label": "Commerce", "color": "#39ff14", "icon": "🛒"},
-            "learning": {"label": "Learning", "color": "#ffae00", "icon": "🧠"},
+            "planning": {"label": "Planning", "color": "#00d4ff", "icon": "📋"},
+            "engineering": {"label": "Engineering", "color": "#ff6ec7", "icon": "⚙️"},
+            "quality": {"label": "Quality", "color": "#39ff14", "icon": "✅"},
+            "docs": {"label": "DevOps & Docs", "color": "#ffae00", "icon": "📚"},
         },
-        pipeline=["signal_intake", "briefing", "design_generation", "review_packet",
-                   "human_approval", "draft_publish", "learning"],
+        pipeline=["planning", "architecture", "implementation", "review",
+                   "testing", "security_audit", "deploy"],
         title="PixelPulse Visual Test",
         port=PORT,
         storage=False,  # Don't create DB for visual test
@@ -443,52 +443,52 @@ async def test_14_api_events(page, pp):
     pp.run_started("visual-test-run", name="Visual Test Pipeline")
     await page.wait_for_timeout(1000)
 
-    pp.agent_started("signal-scout", task="Scanning DE market for trending niches")
+    pp.agent_started("planner", task="Breaking down user story: Add real-time notifications")
     await page.wait_for_timeout(1500)
 
-    pp.agent_thinking("signal-scout", thought="Found 12 signals in Home & Living category, filtering by emotional resonance score > 0.7")
+    pp.agent_thinking("planner", thought="Decomposing into 4 subtasks: WebSocket setup, event schema, notification UI component, integration tests")
     await page.wait_for_timeout(2000)
     await screenshot(page, "19_api_agent_thinking.png")
 
-    pp.agent_message("signal-scout", "emotion-mapper",
-                     content="5 high-resonance signals: cozy-minimalism, pet-wellness, urban-gardening, sunset-aesthetic, retro-gaming",
-                     tag="signals")
+    pp.agent_message("planner", "architect",
+                     content="4 subtasks ready: ws-setup, event-schema, notif-ui, integration-tests. Priority: ws-setup first.",
+                     tag="tasks")
     await page.wait_for_timeout(2000)
     await screenshot(page, "20_api_message_particle.png")
 
-    pp.agent_started("emotion-mapper", task="Mapping emotional clusters")
-    pp.agent_thinking("emotion-mapper", thought="Clustering signals by emotional profile: nostalgia (3), comfort (2), adventure (1)")
+    pp.agent_started("architect", task="Designing WebSocket notification architecture")
+    pp.agent_thinking("architect", thought="Evaluating: Server-Sent Events vs WebSocket vs polling. WebSocket wins for bi-directional real-time.")
     await page.wait_for_timeout(2000)
 
-    pp.agent_message("emotion-mapper", "niche-scorer",
-                     content="Top cluster: nostalgia-comfort (score: 0.89)", tag="clusters")
+    pp.agent_message("architect", "backend-dev",
+                     content="Architecture: FastAPI WebSocket endpoint /ws/notifications, Redis pub/sub for scaling", tag="design")
     await page.wait_for_timeout(1500)
 
-    pp.cost_update("signal-scout", cost=0.0024, tokens_in=1200, tokens_out=340, model="claude-sonnet-4")
-    pp.cost_update("emotion-mapper", cost=0.0018, tokens_in=800, tokens_out=250, model="claude-sonnet-4")
+    pp.cost_update("planner", cost=0.0024, tokens_in=1200, tokens_out=340, model="claude-sonnet-4")
+    pp.cost_update("architect", cost=0.0018, tokens_in=800, tokens_out=250, model="claude-sonnet-4")
     await page.wait_for_timeout(1000)
 
-    pp.agent_started("brief-expander", task="Expanding brief: retro-gaming nostalgia mug")
-    pp.agent_thinking("brief-expander",
-                      thought="Target: 30-something gamers in DE. Mood: warm nostalgia + pixel art. Product: ceramic mug with 8-bit game sprites.")
+    pp.agent_started("frontend-dev", task="Building notification toast component")
+    pp.agent_thinking("frontend-dev",
+                      thought="Creating NotificationToast.tsx with auto-dismiss, stack limit of 5, slide-in animation from top-right.")
     await page.wait_for_timeout(2000)
     await screenshot(page, "21_api_multi_agent_active.png")
 
-    pp.agent_message("brief-expander", "image-generator",
-                     content="Generate pixel-art retro gaming mug design, 8-bit sprites, warm palette", tag="prompts")
+    pp.agent_message("frontend-dev", "backend-dev",
+                     content="Toast component ready, expecting { type, title, body, severity } from WS", tag="interface")
     await page.wait_for_timeout(1500)
 
-    pp.agent_started("image-generator", task="Generating design variations")
-    pp.agent_thinking("image-generator", thought="Generating 4 variations with Stability AI, resolution 1024x1024, style: pixel-art")
+    pp.agent_started("backend-dev", task="Implementing WebSocket notification endpoint")
+    pp.agent_thinking("backend-dev", thought="Setting up /ws/notifications with connection manager, heartbeat every 30s, JSON message format")
     await page.wait_for_timeout(2500)
-    await screenshot(page, "22_api_design_phase.png")
+    await screenshot(page, "22_api_engineering_phase.png")
 
-    pp.agent_completed("image-generator", output="4 design variations generated")
-    pp.agent_completed("brief-expander", output="Brief expanded successfully")
+    pp.agent_completed("backend-dev", output="WebSocket endpoint implemented with tests")
+    pp.agent_completed("frontend-dev", output="NotificationToast component shipped")
     await page.wait_for_timeout(1000)
 
-    pp.agent_completed("signal-scout", output="Research complete")
-    pp.agent_completed("emotion-mapper", output="Emotional mapping complete")
+    pp.agent_completed("planner", output="All subtasks assigned and tracked")
+    pp.agent_completed("architect", output="Architecture document finalized")
     await page.wait_for_timeout(2000)
     await screenshot(page, "23_api_agents_completing.png")
 
@@ -499,10 +499,10 @@ async def test_14_api_events(page, pp):
 
 async def test_15_error_state(page, pp):
     """Emit an error event and verify it appears on dashboard."""
-    pp.agent_started("listing-writer", task="Writing Amazon listing")
+    pp.agent_started("deploy-agent", task="Deploying to staging environment")
     await page.wait_for_timeout(1000)
 
-    pp.agent_error("listing-writer", error="Rate limit exceeded — Amazon API throttled (429)")
+    pp.agent_error("deploy-agent", error="Deployment failed — container health check timed out after 60s (exit code 137)")
     await page.wait_for_timeout(2000)
     await screenshot(page, "24_error_state.png")
 

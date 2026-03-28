@@ -19,29 +19,45 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# Approximate cost per 1K tokens for models commonly used with CrewAI
-_TOKEN_COSTS: dict[str, tuple[float, float]] = {
-    "gpt-4.1": (0.002, 0.008),
-    "gpt-4.1-mini": (0.0004, 0.0016),
-    "gpt-4.1-nano": (0.0001, 0.0004),
-    "gpt-4o": (0.0025, 0.01),
-    "gpt-4o-mini": (0.00015, 0.0006),
-    "gpt-4-turbo": (0.01, 0.03),
-    "gpt-3.5-turbo": (0.0005, 0.0015),
-    "claude-sonnet-4-20250514": (0.003, 0.015),
-    "claude-haiku-3.5": (0.0008, 0.004),
-    "o3": (0.01, 0.04),
-    "o3-mini": (0.0011, 0.0044),
-    "o4-mini": (0.0011, 0.0044),
+# Per-million-token pricing (input, output) — March 2026
+# CrewAI can use any LLM provider, so we cover all major models.
+# Sources: docs.anthropic.com, openai.com/api/pricing, ai.google.dev, api-docs.deepseek.com
+_TOKEN_COSTS_MTK: dict[str, tuple[float, float]] = {
+    # OpenAI
+    "gpt-4.1-nano":   (0.10, 0.40),
+    "gpt-4.1-mini":   (0.40, 1.60),
+    "gpt-4.1":        (2.00, 8.00),
+    "gpt-4o-mini":    (0.15, 0.60),
+    "gpt-4o":         (2.50, 10.00),
+    "gpt-4-turbo":    (10.00, 30.00),
+    "o4-mini":        (1.10, 4.40),
+    "o3":             (2.00, 8.00),
+    # Anthropic
+    "claude-opus-4":   (5.0, 25.0),
+    "claude-sonnet-4": (3.0, 15.0),
+    "claude-haiku-4":  (1.0, 5.0),
+    "claude-3.5-sonnet": (3.0, 15.0),
+    "claude-3.5-haiku":  (0.80, 4.0),
+    "claude-3-opus":   (15.0, 75.0),
+    # Google Gemini
+    "gemini-2.5-pro":  (1.25, 10.00),
+    "gemini-2.5-flash": (0.15, 0.60),
+    "gemini-2.0-flash": (0.10, 0.40),
+    # DeepSeek
+    "deepseek":        (0.28, 0.42),
 }
 
 
 def _estimate_cost(model: str, input_tokens: int, output_tokens: int) -> float:
-    """Estimate cost from token counts and model name."""
-    for prefix, (in_cost, out_cost) in _TOKEN_COSTS.items():
+    """Estimate cost from token counts and model name.
+
+    Pricing is per million tokens. Prefix-matches model ID.
+    """
+    for prefix, (in_mtk, out_mtk) in _TOKEN_COSTS_MTK.items():
         if model and model.startswith(prefix):
-            return (input_tokens / 1000 * in_cost) + (output_tokens / 1000 * out_cost)
-    return (input_tokens + output_tokens) / 1000 * 0.002
+            return (input_tokens / 1_000_000 * in_mtk) + (output_tokens / 1_000_000 * out_mtk)
+    # Unknown model — conservative estimate at $2/$8 per MTok
+    return (input_tokens / 1_000_000 * 2.0) + (output_tokens / 1_000_000 * 8.0)
 
 
 def _sanitize_name(name: str | None) -> str:

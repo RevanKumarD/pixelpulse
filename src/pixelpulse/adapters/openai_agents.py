@@ -22,25 +22,35 @@ logger = logging.getLogger(__name__)
 
 # Approximate cost per 1K tokens for common models (for cost estimation)
 # Sorted longest-prefix-first so "gpt-4o-mini" matches before "gpt-4o"
-_TOKEN_COSTS: dict[str, tuple[float, float]] = {
-    "gpt-4.1-mini": (0.0004, 0.0016),
-    "gpt-4.1-nano": (0.0001, 0.0004),
-    "gpt-4.1": (0.002, 0.008),
-    "gpt-4o-mini": (0.00015, 0.0006),
-    "gpt-4o": (0.0025, 0.01),
-    "o3-mini": (0.0011, 0.0044),
-    "o3": (0.01, 0.04),
-    "o4-mini": (0.0011, 0.0044),
+# Per-million-token pricing (input, output) — March 2026
+# Sources: openai.com/api/pricing, platform.openai.com/docs/pricing
+_TOKEN_COSTS_MTK: dict[str, tuple[float, float]] = {
+    # GPT-4.1 family
+    "gpt-4.1-nano": (0.10, 0.40),
+    "gpt-4.1-mini": (0.40, 1.60),
+    "gpt-4.1":      (2.00, 8.00),
+    # GPT-4o family
+    "gpt-4o-mini":  (0.15, 0.60),
+    "gpt-4o":       (2.50, 10.00),
+    # o-series reasoning
+    "o4-mini":      (1.10, 4.40),
+    "o3":           (2.00, 8.00),
+    # GPT-5
+    "gpt-5":        (2.00, 8.00),      # placeholder — update when released
 }
 
 
 def _estimate_cost(model: str, input_tokens: int, output_tokens: int) -> float:
-    """Estimate cost from token counts and model name."""
-    for prefix, (in_cost, out_cost) in _TOKEN_COSTS.items():
+    """Estimate cost from token counts and model name.
+
+    Pricing is per million tokens. Prefix-matches so 'gpt-4.1-mini-2025-04-14'
+    matches 'gpt-4.1-mini' (checked before 'gpt-4.1' due to dict order).
+    """
+    for prefix, (in_mtk, out_mtk) in _TOKEN_COSTS_MTK.items():
         if model and model.startswith(prefix):
-            return (input_tokens / 1000 * in_cost) + (output_tokens / 1000 * out_cost)
-    # Unknown model — rough estimate
-    return (input_tokens + output_tokens) / 1000 * 0.002
+            return (input_tokens / 1_000_000 * in_mtk) + (output_tokens / 1_000_000 * out_mtk)
+    # Unknown model — fall back to GPT-4.1-mini pricing ($0.40/$1.60 per MTok)
+    return (input_tokens / 1_000_000 * 0.40) + (output_tokens / 1_000_000 * 1.60)
 
 
 class OpenAIAgentsAdapter:

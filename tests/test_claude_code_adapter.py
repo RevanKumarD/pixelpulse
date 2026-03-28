@@ -34,10 +34,14 @@ class TestSanitizeToolName:
 
 class TestEstimateCost:
     def test_opus_pricing(self):
+        # Opus 4.6: $5/MTok in, $25/MTok out
+        # 1000 in → $0.005, 500 out → $0.0125
         cost = _estimate_cost("claude-opus-4-20250514", 1000, 500)
-        assert cost == pytest.approx(0.015 + 0.0375, rel=1e-2)
+        assert cost == pytest.approx(0.005 + 0.0125, rel=1e-2)
 
     def test_sonnet_pricing(self):
+        # Sonnet 4.6: $3/MTok in, $15/MTok out
+        # 1000 in → $0.003, 500 out → $0.0075
         cost = _estimate_cost("claude-sonnet-4-20250514", 1000, 500)
         assert cost == pytest.approx(0.003 + 0.0075, rel=1e-2)
 

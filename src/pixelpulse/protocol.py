@@ -124,7 +124,15 @@ def to_dashboard_event(event: dict) -> dict:
         )
         dashboard_payload["message"] = payload.get("message", f"Stage: {payload.get('stage', '')}")
     elif event_type == COST_UPDATE:
-        pass  # payload already has agent_id, cost, etc.
+        # If adapter didn't compute cost but sent tokens + model, estimate it
+        if not dashboard_payload.get("cost") and (
+            dashboard_payload.get("tokens_in") or dashboard_payload.get("tokens_out")
+        ):
+            dashboard_payload["cost"] = _estimate_cost_from_model(
+                dashboard_payload.get("model", ""),
+                dashboard_payload.get("tokens_in", 0),
+                dashboard_payload.get("tokens_out", 0),
+            )
     elif event_type == RUN_STARTED:
         dashboard_payload["stage"] = "started"
         dashboard_payload["status"] = "active"
@@ -151,6 +159,40 @@ def validate_event(event: dict) -> list[str]:
     elif event["type"] not in EVENT_TYPES:
         errors.append(f"Unknown event type: {event['type']}")
     return errors
+
+
+# Fallback cost estimation for adapters that send tokens but not cost.
+# Per-million-token pricing (input, output) — March 2026
+_FALLBACK_COSTS: dict[str, tuple[float, float]] = {
+    # Anthropic
+    "claude-opus-4": (5.0, 25.0),
+    "claude-sonnet-4": (3.0, 15.0),
+    "claude-haiku-4": (1.0, 5.0),
+    "claude-3.5-sonnet": (3.0, 15.0),
+    "claude-3-opus": (15.0, 75.0),
+    # OpenAI
+    "gpt-4.1-nano": (0.10, 0.40),
+    "gpt-4.1-mini": (0.40, 1.60),
+    "gpt-4.1": (2.00, 8.00),
+    "gpt-4o-mini": (0.15, 0.60),
+    "gpt-4o": (2.50, 10.00),
+    "o4-mini": (1.10, 4.40),
+    "o3": (2.00, 8.00),
+    # Google
+    "gemini-2.5-pro": (1.25, 10.00),
+    "gemini-2.5-flash": (0.15, 0.60),
+    # DeepSeek
+    "deepseek": (0.28, 0.42),
+}
+
+
+def _estimate_cost_from_model(model: str, tokens_in: int, tokens_out: int) -> float:
+    """Server-side cost estimation when adapters provide tokens but not cost."""
+    for prefix, (in_mtk, out_mtk) in _FALLBACK_COSTS.items():
+        if model and model.startswith(prefix):
+            return (tokens_in / 1_000_000 * in_mtk) + (tokens_out / 1_000_000 * out_mtk)
+    # Unknown model — $3/$15 per MTok (Sonnet-class default)
+    return (tokens_in / 1_000_000 * 3.0) + (tokens_out / 1_000_000 * 15.0)
 
 
 def _utc_now() -> str:

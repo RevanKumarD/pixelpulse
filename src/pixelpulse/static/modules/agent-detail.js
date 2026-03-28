@@ -644,9 +644,10 @@ function _fmtTime(t) {
   if (!t) return "";
   try {
     const d = new Date(t);
+    if (isNaN(d.getTime())) return "";
     return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   } catch {
-    return t;
+    return "";
   }
 }
 

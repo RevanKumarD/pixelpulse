@@ -233,6 +233,24 @@ export function expireBubbles() {
 
 let particleIdCounter = 0;
 
+/** Generate a consistent color from a string hash — for unknown tags. */
+function _hashColor(str) {
+  if (!str) return "#64748b";
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue}, 70%, 55%)`;
+}
+
+/** Safe timestamp formatting — returns locale time string or fallback "now". */
+function _safeTime(ts) {
+  if (!ts) return new Date().toLocaleTimeString();
+  try {
+    const d = new Date(ts);
+    return isNaN(d.getTime()) ? new Date().toLocaleTimeString() : d.toLocaleTimeString();
+  } catch { return new Date().toLocaleTimeString(); }
+}
+
 export function addParticle(fromAgent, toAgent, color, content, tag) {
   const id = ++particleIdCounter;
   const particle = { id, fromAgent, toAgent, progress: 0, color, content, tag: tag || "" };
@@ -250,9 +268,7 @@ export function tickParticles(dt = 0.015) {
 // --- Comms Feed ---
 
 export function addComm(comm) {
-  const ts = comm.timestamp
-    ? new Date(comm.timestamp).toLocaleTimeString()
-    : new Date().toLocaleTimeString();
+  const ts = _safeTime(comm.timestamp);
   const entry = { time: ts, ...comm };
   state.comms = [entry, ...state.comms.slice(0, 99)];
   notify("comm", entry);
@@ -306,9 +322,7 @@ function _formatEventText(type, p) {
 }
 
 export function addEvent(event) {
-  const ts = event.timestamp
-    ? new Date(event.timestamp).toLocaleTimeString()
-    : new Date().toLocaleTimeString();
+  const ts = _safeTime(event.timestamp);
   const p = event.payload || {};
   const text = _formatEventText(event.type, p);
   state.events = [{ time: ts, text, type: event.type }, ...state.events.slice(0, 49)];
@@ -343,22 +357,23 @@ export function addEvent(event) {
       });
     }
     // Spawn particle — color by data tag for visual distinction
+    // Dynamic tag coloring — derive from tag name hash for any arbitrary tag,
+    // with a palette of distinct colors for common categories
     const TAG_COLORS = {
-      signals:   "#00d4ff",  // research blue
-      clusters:  "#7c3aed",  // purple
-      scores:    "#06b6d4",  // cyan
-      brief:     "#3b82f6",  // blue
-      prompts:   "#ff6ec7",  // design pink
-      artifacts: "#ec4899",  // hot pink
-      qa:        "#f59e0b",  // amber
-      listings:  "#39ff14",  // commerce green
-      localized: "#22d3ee",  // teal
-      feedback:  "#ffae00",  // learning gold
-      analysis:  "#f97316",  // orange
-      memory:    "#a855f7",  // violet
-      data:      "#64748b",  // neutral
+      data:      "#64748b",  // neutral gray — default
+      tasks:     "#00d4ff",  // blue
+      design:    "#ff6ec7",  // pink
+      code:      "#39ff14",  // green
+      review:    "#ffae00",  // amber
+      tests:     "#06b6d4",  // cyan
+      docs:      "#a855f7",  // violet
+      deploy:    "#f97316",  // orange
+      error:     "#ff4444",  // red
+      interface: "#3b82f6",  // blue
+      results:   "#22d3ee",  // teal
+      config:    "#ec4899",  // hot pink
     };
-    const tagColor = TAG_COLORS[p.tag] || TAG_COLORS.data;
+    const tagColor = TAG_COLORS[p.tag] || _hashColor(p.tag);
     addParticle(p.from, p.to, tagColor, p.content || "", p.tag || "data");
     // Show bubble on receiving agent
     if (p.content) {

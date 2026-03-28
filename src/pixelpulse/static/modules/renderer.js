@@ -2935,11 +2935,18 @@ export function renderPipeline() {
   }
 }
 
-// Track which teams are collapsed — collapsed by default so Cost is always visible
-const _collapsedTeams = new Set(["research", "design", "commerce", "learning"]);
+// Track which teams are collapsed — ALL collapsed by default so Cost is always visible
+// Dynamically populated from TEAMS on first render
+const _collapsedTeams = new Set();
 
+let _collapsedInited = false;
 export function renderAgentActivity() {
   if (!agentActivityContainer) return;
+  // On first render, collapse all teams by default
+  if (!_collapsedInited) {
+    for (const tid of Object.keys(TEAMS)) _collapsedTeams.add(tid);
+    _collapsedInited = true;
+  }
   let html = "";
   for (const [teamId, team] of Object.entries(TEAMS)) {
     const isCollapsed = _collapsedTeams.has(teamId);
@@ -3058,13 +3065,8 @@ function _eventMatchesTeam(event, teamFilter) {
 }
 
 function getAgentTeamColor(agentName) {
-  const teamColors = {
-    research: "#00d4ff", design: "#ff6ec7",
-    commerce: "#39ff14", learning: "#ffae00",
-    orchestrator: "#00d4ff",
-  };
-  for (const [teamId, team] of Object.entries(TEAMS)) {
-    if (team.agents.includes(agentName)) return teamColors[teamId] || "#64748b";
+  for (const [, team] of Object.entries(TEAMS)) {
+    if (team.agents.includes(agentName)) return team.color || "#64748b";
   }
   return "#64748b";
 }

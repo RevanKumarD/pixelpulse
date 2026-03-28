@@ -41,21 +41,34 @@ _TOOL_CATEGORIES: dict[str, str] = {
 }
 
 # Approximate token costs for Claude models
-_TOKEN_COSTS: dict[str, tuple[float, float]] = {
-    "claude-opus-4": (0.015, 0.075),
-    "claude-sonnet-4": (0.003, 0.015),
-    "claude-haiku-4": (0.0008, 0.004),
-    "claude-3.5-sonnet": (0.003, 0.015),
-    "claude-3.5-haiku": (0.0008, 0.004),
+# Per-million-token pricing (input, output) — March 2026
+# Sources: docs.anthropic.com/en/docs/about-claude/pricing
+_TOKEN_COSTS_MTK: dict[str, tuple[float, float]] = {
+    # Claude 4.5/4.6 family
+    "claude-opus-4":   (5.0, 25.0),     # Opus 4.5 & 4.6
+    "claude-sonnet-4": (3.0, 15.0),     # Sonnet 4.5 & 4.6
+    "claude-haiku-4":  (1.0, 5.0),      # Haiku 4.5
+    # Claude 3.5 family
+    "claude-3.5-sonnet": (3.0, 15.0),
+    "claude-3.5-haiku":  (0.80, 4.0),
+    # Claude 3 family
+    "claude-3-opus":   (15.0, 75.0),
+    "claude-3-sonnet": (3.0, 15.0),
+    "claude-3-haiku":  (0.25, 1.25),
 }
 
 
 def _estimate_cost(model: str, input_tokens: int, output_tokens: int) -> float:
-    """Estimate cost from token counts and model name."""
-    for prefix, (in_cost, out_cost) in _TOKEN_COSTS.items():
+    """Estimate cost from token counts and model name.
+
+    Pricing is per million tokens. We match model ID by prefix so that
+    'claude-opus-4-6-20260301' matches 'claude-opus-4'.
+    """
+    for prefix, (in_mtk, out_mtk) in _TOKEN_COSTS_MTK.items():
         if model and model.startswith(prefix):
-            return (input_tokens / 1000 * in_cost) + (output_tokens / 1000 * out_cost)
-    return (input_tokens + output_tokens) / 1000 * 0.003  # default to sonnet pricing
+            return (input_tokens / 1_000_000 * in_mtk) + (output_tokens / 1_000_000 * out_mtk)
+    # Unknown model — fall back to Sonnet 4.6 pricing ($3/$15 per MTok)
+    return (input_tokens / 1_000_000 * 3.0) + (output_tokens / 1_000_000 * 15.0)
 
 
 def _sanitize_tool_name(name: str) -> str:
