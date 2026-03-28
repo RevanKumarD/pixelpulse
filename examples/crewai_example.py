@@ -17,7 +17,6 @@ If you don't have CrewAI installed or an API key, the example falls back
 to a simulation that demonstrates the same dashboard events.
 """
 import os
-import sys
 import threading
 import time
 
@@ -43,7 +42,7 @@ pp = PixelPulse(
 
 def run_with_real_crewai():
     """Run with the actual CrewAI SDK (requires crewai + API key)."""
-    from crewai import Agent, Task, Crew
+    from crewai import Agent, Crew, Task
 
     # 1. Instrument the crew
     adapter = pp.adapter("crewai")

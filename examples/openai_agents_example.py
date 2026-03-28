@@ -17,7 +17,6 @@ If you don't have an API key, the example falls back to a simulation
 that demonstrates the same dashboard events without making real API calls.
 """
 import os
-import sys
 import threading
 import time
 

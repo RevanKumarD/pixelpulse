@@ -434,7 +434,7 @@ class TestEdgeCases:
         graph = _make_compiled_graph()
         adapter.instrument(graph)
 
-        result = graph.invoke({"input": "test"})
+        graph.invoke({"input": "test"})
 
         # Original invoke was called
         adapter._original_invoke.assert_called_once()

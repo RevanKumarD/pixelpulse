@@ -144,7 +144,7 @@ class TestCrewAIFunctional:
             events = resp.json()
 
             # run_started maps to "run_status" or "pipeline_update" on the dashboard
-            types_seen = {e["type"] for e in events}
+            {e["type"] for e in events}
             # We just need at least one event — run lifecycle was emitted
             assert len(events) >= 1
 
@@ -265,7 +265,7 @@ class TestCrewAIFunctional:
     async def test_kickoff_run_id_increments(self, pp):
         """Each kickoff() call gets a new run ID (crewai-run-N)."""
         fake_crew1 = _make_fake_crew()
-        fake_crew2 = _make_fake_crew()
+        _make_fake_crew()
         adapter = pp.adapter("crewai")
         _install_crewai_adapter_directly(adapter, fake_crew1)
 

@@ -24,7 +24,7 @@ import time
 from typing import Annotated, Any
 
 # -- LangGraph imports ------------------------------------------------------
-from langgraph.graph import StateGraph, START, END
+from langgraph.graph import END, START, StateGraph
 from typing_extensions import TypedDict
 
 # -- PixelPulse imports -----------------------------------------------------

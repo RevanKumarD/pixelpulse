@@ -23,7 +23,7 @@ class TestAgentConfig:
         config = AgentConfig(role="test")
         try:
             config.role = "changed"  # type: ignore
-            assert False, "Should not allow mutation"
+            raise AssertionError("Should not allow mutation")
         except AttributeError:
             pass
 

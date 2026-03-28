@@ -28,7 +28,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 import time
 
 
@@ -97,7 +96,7 @@ def main() -> None:
 
     elif args.simulate:
         # Simulation mode: fake a Claude Code session
-        print(f"\n[SIM] Running Claude Code simulation")
+        print("\n[SIM] Running Claude Code simulation")
         print(f"      Dashboard: http://localhost:{args.port}\n")
         import threading
         server_thread = threading.Thread(
@@ -121,12 +120,12 @@ def main() -> None:
         # Live mode: start server with hook endpoint
         hooks_config = adapter.generate_hooks_config(port=args.port)
 
-        print(f"\n[LIVE] PixelPulse Claude Code Hook Receiver")
+        print("\n[LIVE] PixelPulse Claude Code Hook Receiver")
         print(f"       Dashboard: http://localhost:{args.port}")
         print(f"       Hook endpoint: http://localhost:{args.port}/hooks/claude-code")
-        print(f"\nAdd this to your .claude/settings.json:\n")
+        print("\nAdd this to your .claude/settings.json:\n")
         print(json.dumps(hooks_config, indent=2))
-        print(f"\n   Then use Claude Code normally — events will appear on the dashboard!\n")
+        print("\n   Then use Claude Code normally — events will appear on the dashboard!\n")
 
         pp.serve(port=args.port, open_browser=True)
 

@@ -117,7 +117,7 @@ class TestOtelIngestion:
             resp = await client.get("/api/events")
             events = resp.json()
 
-        types = {e["type"] for e in events}
+        {e["type"] for e in events}
         # Should produce agent_status or cost_update from the span
         assert len(events) >= 1
 

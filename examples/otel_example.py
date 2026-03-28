@@ -23,7 +23,6 @@ from __future__ import annotations
 import time
 
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 from opentelemetry.trace import StatusCode
 
 from pixelpulse import PixelPulse

@@ -288,7 +288,7 @@ class TestRunLifecycle:
     ) -> None:
         adapter.instrument(team)
 
-        result = asyncio.run(team.run(task="Build a calculator"))
+        asyncio.run(team.run(task="Build a calculator"))
 
         mock_pp.run_started.assert_called_once()
         mock_pp.run_completed.assert_called_once()
@@ -451,7 +451,7 @@ class TestSingleAgentWrapping:
         adapter = AutoGenAdapter(mock_pp)
         adapter.instrument(agent)
 
-        result = asyncio.run(agent.on_messages([TextMessage("Do stuff", "user")]))
+        asyncio.run(agent.on_messages([TextMessage("Do stuff", "user")]))
 
         mock_pp.agent_started.assert_called_once_with("solo", task="Do stuff")
         mock_pp.agent_completed.assert_called_once()

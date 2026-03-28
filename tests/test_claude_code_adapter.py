@@ -128,7 +128,7 @@ class TestToolEvents:
             "tool_input": {"command": "git status"},
         })
         pp.agent_thinking.assert_called()
-        thought = pp.agent_thinking.call_args[1].get("thought", "") or pp.agent_thinking.call_args[0][1] if len(pp.agent_thinking.call_args[0]) > 1 else ""
+        pp.agent_thinking.call_args[1].get("thought", "") or pp.agent_thinking.call_args[0][1] if len(pp.agent_thinking.call_args[0]) > 1 else ""
         # Check via kwargs
         calls = pp.agent_thinking.call_args_list
         assert any("git status" in str(c) for c in calls)
@@ -308,7 +308,7 @@ class TestTranscriptReplay:
                 "content": "def main(): pass",
             },
         ]
-        transcript.write_text("\n".join(json.dumps(l) for l in lines))
+        transcript.write_text("\n".join(json.dumps(line) for line in lines))
 
         adapter, pp = _make_adapter()
         adapter.replay_transcript(str(transcript))

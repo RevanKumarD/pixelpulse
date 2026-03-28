@@ -70,7 +70,7 @@ def run_pipeline() -> None:
 
     pp.run_completed("run-1", status="completed")
 
-    print(f"\nPipeline complete!")
+    print("\nPipeline complete!")
     print(f"  Research: {research_output[:60]}...")
     print(f"  Review:   {review_result}")
     print("\nDashboard at http://localhost:8765  (Ctrl-C to exit)")

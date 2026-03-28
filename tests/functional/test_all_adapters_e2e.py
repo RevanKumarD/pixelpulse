@@ -318,7 +318,7 @@ class TestAutoGenE2E:
         adapter = pp.adapter("autogen")
         adapter.instrument(team)
 
-        async for msg in team.run_stream(task="Test research"):
+        async for _msg in team.run_stream(task="Test research"):
             pass
         await asyncio.sleep(0)
 

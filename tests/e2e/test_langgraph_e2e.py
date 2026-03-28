@@ -175,7 +175,6 @@ class TestLangGraphE2E:
     def test_adapter_emits_agent_started_events(self, pp, graph):
         """Each node execution should emit agent_started."""
         started_calls: list[tuple[str, str]] = []
-        original_started = pp.agent_started
 
         def capture_started(agent_id, task="", **kw):
             started_calls.append((agent_id, task))
