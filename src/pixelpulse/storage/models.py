@@ -2,8 +2,15 @@
 from __future__ import annotations
 
 import json
+import sys
 from dataclasses import dataclass, field
-from enum import StrEnum
+from enum import Enum
+
+if sys.version_info >= (3, 11):
+    from enum import StrEnum
+else:
+    class StrEnum(str, Enum):
+        """Polyfill for Python 3.10."""
 
 
 class RunStatus(StrEnum):
