@@ -6,12 +6,13 @@ from __future__ import annotations
 
 import sys
 from unittest.mock import MagicMock, patch
+
 import pytest
 
 from pixelpulse.adapters.openai_agents import (
     OpenAIAgentsAdapter,
-    _PixelPulseTracingProcessor,
     _estimate_cost,
+    _PixelPulseTracingProcessor,
     _sanitize_name,
 )
 

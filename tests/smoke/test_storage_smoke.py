@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import pytest
-import pytest_asyncio
 
 from pixelpulse.storage.db import Database
 from pixelpulse.storage.event_repo import EventRepository
@@ -19,16 +18,13 @@ class TestStorageModuleImports:
         assert Database is not None
 
     def test_import_models(self):
-        from pixelpulse.storage.models import EventRecord, RunRecord, RunStatus
         assert RunStatus.ACTIVE == "active"
         assert RunStatus.COMPLETED == "completed"
 
     def test_import_run_repo(self):
-        from pixelpulse.storage.run_repo import RunRepository
         assert RunRepository is not None
 
     def test_import_event_repo(self):
-        from pixelpulse.storage.event_repo import EventRepository
         assert EventRepository is not None
 
     def test_import_subscriber(self):

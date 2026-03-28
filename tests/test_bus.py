@@ -1,5 +1,4 @@
 """Tests for the PixelPulse event bus."""
-import asyncio
 
 import pytest
 

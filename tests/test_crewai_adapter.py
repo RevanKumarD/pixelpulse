@@ -4,7 +4,8 @@ Uses mocks for all crewai imports so tests work without installing the SDK.
 """
 from __future__ import annotations
 
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock
+
 import pytest
 
 from pixelpulse.adapters.crewai import (

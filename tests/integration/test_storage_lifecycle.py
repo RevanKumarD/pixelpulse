@@ -6,11 +6,8 @@ from __future__ import annotations
 
 import pytest
 import pytest_asyncio
-from httpx import ASGITransport, AsyncClient
 
 from pixelpulse.bus import EventBus
-from pixelpulse.config import AgentConfig, TeamConfig
-from pixelpulse.server import create_app
 from pixelpulse.storage.db import Database
 from pixelpulse.storage.event_repo import EventRepository
 from pixelpulse.storage.models import RunStatus

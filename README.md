@@ -6,7 +6,7 @@
 [![Python](https://img.shields.io/pypi/pyversions/pixelpulse.svg)](https://pypi.org/project/pixelpulse/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![CI](https://github.com/RevanKumarD/pixelpulse/actions/workflows/ci.yml/badge.svg)](https://github.com/RevanKumarD/pixelpulse/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-400%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-505%20passing-brightgreen.svg)](tests/)
 
 ![PixelPulse Demo — agents roaming, messages flowing, pipeline progressing](tests/visual/demo-preview.gif)
 
@@ -71,7 +71,7 @@ Open `http://localhost:8765` — your agents appear as pixel-art characters in t
 
 ## What You See
 
-![Agents at work — 4 teams, pipeline tracker, event log, cost counter](tests/visual/screenshots/02_demo_agents_active.png)
+![Agents at work — 4 teams, pipeline tracker, event log, cost counter](tests/visual/screenshots/03_demo_active_13s.png)
 
 <table>
 <tr>
@@ -104,25 +104,25 @@ Open `http://localhost:8765` — your agents appear as pixel-art characters in t
 
 Agents communicate across rooms with glowing particles, speech bubbles, and a rich event log:
 
-![Message flow — particles between rooms, speech bubbles, event log](tests/visual/screenshots/19_manual_message_flow.png)
+![Message flow — particles between rooms, speech bubbles, event log](tests/visual/screenshots/20_api_message_particle.png)
 
 ### Focus Mode
 
 Double-click any room to zoom in. A minimap appears showing your position. Press ESC or 0 to return:
 
-![Focus mode — zoomed into Research Lab with minimap](tests/visual/screenshots/23_focus_room1_content.png)
+![Focus mode — zoomed into room with minimap](tests/visual/screenshots/15_zoomed_in.png)
 
 ### Flow Connectors
 
 Press `F` to show dashed pipeline arrows between rooms, visualizing the data flow path:
 
-![Flow connectors — dashed arrows between rooms](tests/visual/screenshots/04_flow_connectors.png)
+![Flow connectors — dashed arrows between rooms](tests/visual/screenshots/16_fit_view.png)
 
 ### Light Theme
 
 Toggle between dark and light themes:
 
-![Light theme](tests/visual/screenshots/47_theme_light.png)
+![Light theme](tests/visual/screenshots/13_light_theme.png)
 
 ---
 
@@ -359,31 +359,36 @@ services:
 
 ## Test Coverage
 
-400 tests across 5 layers:
+505 tests across 5 layers:
 
 | Layer | Count | What it proves |
 |-------|-------|----------------|
-| Unit | 233 | Adapter logic, decorators, protocol, event bus in isolation |
+| Unit | 270+ | Adapter logic, decorators, protocol, event bus, storage models |
 | E2E (graph-level) | 35 | Real LangGraph/OpenAI pipelines with mocked pp boundary |
-| Integration | 11 | `pp.agent_started()` → EventBus → `/api/events` wiring + plugin hook→event flow |
+| Integration | 25+ | `pp.agent_started()` → EventBus → `/api/events` wiring + plugin hook→event flow + storage lifecycle |
 | Functional | 52 | All 7 adapter paths → real pp → bus → HTTP, no mocks |
 | Plugin | 22 | Hook handler parsing, ensure_server, MCP aggregation functions |
-| Visual | 47 | Playwright screenshots across idle, active, focus, themes, stress |
+| Visual | 17 | Playwright screenshots: idle, demo, detail panel, themes, API pipeline, errors |
 
 ---
 
 ## Roadmap
 
 ### v0.3 — Usability (current)
-- [x] Agent click → detail panel with event history
+- [x] Agent click → detail panel with event history (4 tabs)
 - [x] Readable fonts at all zoom levels
 - [x] Enhanced office visuals (lighting, furniture, carpets)
 - [x] Claude Code plugin with hooks, MCP server, and session analytics
-- [ ] Replay mode — scrub through a recorded run
+- [x] Persistent run history with SQLite backend
+- [x] Run replay engine with playback controls
+- [x] Video export (WebM recording of dashboard)
+- [x] Accurate per-MTok pricing for all major providers (March 2026)
+- [x] OpenTelemetry GenAI semantic conventions ingestion
 
-### v0.4 — Depth
-- [ ] Persistent run history with SQLite backend
-- [ ] Structured output display (JSON/markdown in detail panel)
+### v0.4 — Distribution (next)
+- [ ] VS Code extension (watch your Claude Code session live)
+- [ ] Codex CLI / Gemini CLI plugin packages
+- [ ] PyPI stable release with versioned API
 - [ ] Cost alerting thresholds
 
 ### v0.5 — Integrations
@@ -391,10 +396,10 @@ services:
 - [ ] Semantic Kernel adapter
 - [ ] n8n workflow integration
 
-### v1.0 — Distribution
-- [ ] VS Code extension (watch your Claude Code session live)
-- [ ] PyPI stable release with versioned API
+### v1.0 — Scale
+- [ ] Multi-session dashboard (compare runs side-by-side)
 - [ ] Hosted cloud option (optional, privacy-first)
+- [ ] Custom sprite packs
 
 ---
 

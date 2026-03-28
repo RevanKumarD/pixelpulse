@@ -13,7 +13,6 @@ Outputs:
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 import sys
 import threading
@@ -73,8 +72,7 @@ def _start_server():
             "quality": {"label": "Quality", "color": "#39ff14", "icon": "✅"},
             "docs": {"label": "DevOps & Docs", "color": "#ffae00", "icon": "📚"},
         },
-        pipeline=["planning", "architecture", "implementation", "review",
-                   "testing", "security_audit", "deploy"],
+        pipeline=["planning", "engineering", "quality", "docs"],
         title="PixelPulse Visual Test",
         port=PORT,
         storage=False,  # Don't create DB for visual test
@@ -600,7 +598,7 @@ async def main():
     pp_instance, server_thread = _run_server(pp)
 
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=False)
+        browser = await p.chromium.launch(headless=True)
         context = await browser.new_context(viewport={"width": 1400, "height": 900})
         page = await context.new_page()
 

@@ -1,7 +1,7 @@
 """Tests for the Claude Code adapter."""
 from __future__ import annotations
 
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -10,7 +10,6 @@ from pixelpulse.adapters.claude_code import (
     _estimate_cost,
     _sanitize_tool_name,
 )
-
 
 # ---- Utility Tests ----
 

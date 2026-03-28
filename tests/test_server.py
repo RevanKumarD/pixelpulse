@@ -1,5 +1,4 @@
 """Tests for the PixelPulse FastAPI server."""
-import pytest
 from httpx import ASGITransport, AsyncClient
 
 from pixelpulse.config import normalize_agents, normalize_teams

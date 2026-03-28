@@ -162,7 +162,10 @@ if __name__ == "__main__":
     try:
         import agents  # noqa: F401
         has_sdk = True
-    except ImportError:
+    except (ImportError, Exception):
+        # ImportError: package not installed
+        # Other exceptions: SDK version incompatible with this Python version
+        #   (e.g. KeyError from typing on Python 3.11)
         pass
 
     if has_sdk and has_key:
@@ -170,10 +173,10 @@ if __name__ == "__main__":
         sim_thread = threading.Thread(target=run_with_real_sdk, daemon=True)
     else:
         if not has_sdk:
-            print("  openai-agents not installed — running simulation mode")
-            print("  Install with: pip install pixelpulse[openai]")
+            print("  openai-agents SDK not available -- running simulation mode")
+            print("  (requires: pip install openai-agents, Python 3.12+)")
         elif not has_key:
-            print("  OPENAI_API_KEY not set — running simulation mode")
+            print("  OPENAI_API_KEY not set -- running simulation mode")
         sim_thread = threading.Thread(target=run_simulation, daemon=True)
 
     sim_thread.start()

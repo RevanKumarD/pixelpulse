@@ -77,8 +77,8 @@ def main() -> None:
 
     if args.replay:
         # Replay mode: parse transcript file
-        print(f"\n📼 Replaying transcript: {args.replay}")
-        print(f"   Dashboard: http://localhost:{args.port}\n")
+        print(f"\n[REPLAY] Replaying transcript: {args.replay}")
+        print(f"         Dashboard: http://localhost:{args.port}\n")
         import threading
         server_thread = threading.Thread(
             target=pp.serve,
@@ -88,7 +88,7 @@ def main() -> None:
         server_thread.start()
         time.sleep(2)  # Wait for server to start
         adapter.replay_transcript(args.replay)
-        print("\n✅ Replay complete! Dashboard will stay open.")
+        print("\n[DONE] Replay complete! Dashboard will stay open.")
         try:
             while True:
                 time.sleep(1)
@@ -97,8 +97,8 @@ def main() -> None:
 
     elif args.simulate:
         # Simulation mode: fake a Claude Code session
-        print(f"\n🎮 Running Claude Code simulation")
-        print(f"   Dashboard: http://localhost:{args.port}\n")
+        print(f"\n[SIM] Running Claude Code simulation")
+        print(f"      Dashboard: http://localhost:{args.port}\n")
         import threading
         server_thread = threading.Thread(
             target=pp.serve,
@@ -110,7 +110,7 @@ def main() -> None:
 
         _run_simulation(adapter)
 
-        print("\n✅ Simulation complete!")
+        print("\n[DONE] Simulation complete!")
         try:
             while True:
                 time.sleep(1)
@@ -121,10 +121,10 @@ def main() -> None:
         # Live mode: start server with hook endpoint
         hooks_config = adapter.generate_hooks_config(port=args.port)
 
-        print(f"\n🔴 PixelPulse Claude Code Hook Receiver")
-        print(f"   Dashboard: http://localhost:{args.port}")
-        print(f"   Hook endpoint: http://localhost:{args.port}/hooks/claude-code")
-        print(f"\n📋 Add this to your .claude/settings.json:\n")
+        print(f"\n[LIVE] PixelPulse Claude Code Hook Receiver")
+        print(f"       Dashboard: http://localhost:{args.port}")
+        print(f"       Hook endpoint: http://localhost:{args.port}/hooks/claude-code")
+        print(f"\nAdd this to your .claude/settings.json:\n")
         print(json.dumps(hooks_config, indent=2))
         print(f"\n   Then use Claude Code normally — events will appear on the dashboard!\n")
 

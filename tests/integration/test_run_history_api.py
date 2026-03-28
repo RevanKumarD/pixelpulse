@@ -8,8 +8,8 @@ from httpx import ASGITransport, AsyncClient
 from pixelpulse.config import AgentConfig, TeamConfig
 from pixelpulse.server import create_app
 from pixelpulse.storage.db import Database
-from pixelpulse.storage.models import EventRecord, RunRecord, RunStatus
 from pixelpulse.storage.event_repo import EventRepository
+from pixelpulse.storage.models import EventRecord, RunRecord, RunStatus
 from pixelpulse.storage.run_repo import RunRepository
 
 

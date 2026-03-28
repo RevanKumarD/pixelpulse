@@ -14,7 +14,6 @@ use real Agent + Runner + FakeModel for full-stack validation.
 """
 from __future__ import annotations
 
-import sys
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -22,12 +21,10 @@ import pytest
 
 from pixelpulse import PixelPulse
 from pixelpulse.adapters.openai_agents import (
-    OpenAIAgentsAdapter,
-    _PixelPulseTracingProcessor,
     _estimate_cost,
+    _PixelPulseTracingProcessor,
     _sanitize_name,
 )
-
 
 # ---------------------------------------------------------------------------
 # Protocol simulation objects (mirrors OpenAI Agents SDK tracing types)

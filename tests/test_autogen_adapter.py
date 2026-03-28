@@ -5,12 +5,11 @@ All tests use mocks so they work without autogen-agentchat installed.
 from __future__ import annotations
 
 import asyncio
-from unittest.mock import AsyncMock, MagicMock, call, patch
+from unittest.mock import MagicMock
 
 import pytest
 
 from pixelpulse.adapters.autogen import AutoGenAdapter, _extract_content, _extract_source, _safe_str
-
 
 # ---------------------------------------------------------------------------
 # Helpers -- lightweight fakes that mimic AutoGen message shapes

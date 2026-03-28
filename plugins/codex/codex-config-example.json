@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "pixelpulse": {
+      "command": "uv",
+      "args": ["run", "--script", "plugins/claude-code/mcp-server/server.py"],
+      "env": {
+        "PIXELPULSE_PORT": "8765"
+      }
+    }
+  }
+}

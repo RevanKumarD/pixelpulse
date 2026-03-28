@@ -7,12 +7,11 @@ from __future__ import annotations
 
 import uuid
 from types import SimpleNamespace
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock
 
 import pytest
 
 from pixelpulse.adapters.langgraph import LangGraphAdapter, PixelPulseCallbackHandler
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

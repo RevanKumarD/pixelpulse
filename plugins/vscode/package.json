@@ -1,0 +1,80 @@
+{
+  "name": "pixelpulse",
+  "displayName": "PixelPulse",
+  "description": "Pixel-art agent dashboard — watch your AI agents work in real time",
+  "version": "0.1.0",
+  "publisher": "revankumard",
+  "license": "Apache-2.0",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Visualization",
+    "Other"
+  ],
+  "keywords": [
+    "agents",
+    "multi-agent",
+    "observability",
+    "dashboard",
+    "pixel-art",
+    "llm",
+    "ai"
+  ],
+  "main": "./extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "pixelpulse-container",
+          "title": "PixelPulse",
+          "icon": "./icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "pixelpulse-container": [
+        {
+          "type": "webview",
+          "id": "pixelpulse.sidebar",
+          "name": "Dashboard"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "pixelpulse.openDashboard",
+        "title": "PixelPulse: Open Dashboard"
+      },
+      {
+        "command": "pixelpulse.startServer",
+        "title": "PixelPulse: Start Server"
+      },
+      {
+        "command": "pixelpulse.refreshDashboard",
+        "title": "PixelPulse: Refresh Dashboard"
+      }
+    ],
+    "configuration": {
+      "title": "PixelPulse",
+      "properties": {
+        "pixelpulse.port": {
+          "type": "number",
+          "default": 8765,
+          "description": "Port number for the PixelPulse server"
+        },
+        "pixelpulse.autoStart": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically start the PixelPulse server when the extension activates"
+        }
+      }
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RevanKumarD/pixelpulse"
+  },
+  "homepage": "https://github.com/RevanKumarD/pixelpulse"
+}

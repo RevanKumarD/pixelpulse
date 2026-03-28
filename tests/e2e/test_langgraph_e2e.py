@@ -11,20 +11,17 @@ LangGraph graph.invoke → LangChain callbacks → PixelPulse adapter → EventB
 from __future__ import annotations
 
 import operator
-import time
 from typing import Annotated, Any
-from unittest.mock import MagicMock
 
 import pytest
-from typing_extensions import TypedDict
 
 # -- LangGraph imports --
-from langgraph.graph import StateGraph, START, END
+from langgraph.graph import END, START, StateGraph
+from typing_extensions import TypedDict
 
 # -- PixelPulse imports --
 from pixelpulse import PixelPulse
 from pixelpulse.adapters.langgraph import LangGraphAdapter, PixelPulseCallbackHandler
-
 
 # ---------------------------------------------------------------------------
 # Pipeline State
@@ -78,7 +75,7 @@ def reviewer_node(state: ResearchPipelineState) -> dict[str, Any]:
     review = f"Score: 9/10. Draft is {len(draft)} chars. Well structured."
     return {
         "review": review,
-        "log": [f"reviewer: scored 9/10"],
+        "log": ["reviewer: scored 9/10"],
     }
 
 

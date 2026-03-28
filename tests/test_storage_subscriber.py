@@ -1,8 +1,6 @@
 """Integration tests for StorageSubscriber — events flow from bus to SQLite."""
 from __future__ import annotations
 
-import asyncio
-
 import pytest
 import pytest_asyncio
 

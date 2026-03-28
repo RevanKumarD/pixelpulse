@@ -1,10 +1,7 @@
 """Tests for the OTel SpanProcessor and OTLP JSON ingestion."""
 from __future__ import annotations
 
-import pytest
-
 from pixelpulse.otel import (
-    _OtlpSpanProxy,
     parse_otlp_spans,
     span_to_events,
 )
@@ -15,7 +12,6 @@ from pixelpulse.protocol import (
     AGENT_THINKING,
     COST_UPDATE,
 )
-
 
 # ---- Helpers to build fake spans ----
 

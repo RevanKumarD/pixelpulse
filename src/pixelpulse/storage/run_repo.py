@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING
 
-from pixelpulse.storage.models import RunRecord, RunStatus
+from pixelpulse.storage.models import RunRecord
 
 if TYPE_CHECKING:
     from pixelpulse.storage.db import Database

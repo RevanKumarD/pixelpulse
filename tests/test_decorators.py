@@ -2,12 +2,11 @@
 from __future__ import annotations
 
 import asyncio
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock
 
 import pytest
 
 from pixelpulse.decorators import _current_agent, _format_input, _format_output, observe
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

@@ -2,7 +2,6 @@
 from pixelpulse.protocol import (
     AGENT_COMPLETED,
     AGENT_STARTED,
-    AGENT_THINKING,
     COST_UPDATE,
     EVENT_TYPES,
     MESSAGE_SENT,
